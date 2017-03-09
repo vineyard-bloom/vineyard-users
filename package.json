@@ -1,0 +1,21 @@
+{
+  "name": "vineyard-users",
+  "version": "0.1.0",
+  "description": "Vineyard users and login infrastructure",
+  "main": "source/index.js",
+  "types": "source/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "git@github.com:silentorb/vineyard-users.git",
+  "author": "Christopher W. Johnson",
+  "license": "MIT",
+  "dependencies": {
+
+  },
+  "devDependencies": {
+    "@types/express": "^4.0.35",
+    "@types/node": "^7.0.5",
+    "typescript": "^2.1.6"
+  }
+}
