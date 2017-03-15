@@ -1,0 +1,8 @@
+{
+  "database": {
+    "url": "localhost/vineyard_users_test"
+  },
+  "api": {
+    "port":" 3000"
+  }
+}

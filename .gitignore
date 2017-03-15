@@ -4,3 +4,4 @@ npm-*
 *.js.map
 test/**/*.js
 test/**/*.d.ts
+config.json
