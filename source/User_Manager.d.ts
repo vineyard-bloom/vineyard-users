@@ -1,25 +1,21 @@
 /// <reference types="mongoose" />
 /// <reference types="express" />
 /// <reference types="es6-promise" />
+import * as lawn from 'vineyard-lawn';
 import * as express from 'express';
 import * as mongoose from 'mongoose';
 export interface Settings {
     secret: string;
     user?: any;
 }
-export interface User_Info {
-    username: string;
-}
-export interface User_Info_With_Password extends User_Info {
-    password: string;
+export interface Endpoint_Info {
 }
 export declare class User_Manager {
     db: mongoose.Connection;
-    User: mongoose.Model<any>;
-    authenticate_middleware: any;
+    User_Model: mongoose.Model<any>;
     constructor(app: express.Application, mongoose_connection: mongoose.Connection, settings: Settings);
-    get_user(username: any): Promise<User_Info>;
-    initialize_endpoints(app: any): void;
-    get_authenticate_middleware(): any;
+    get_user(username: any): Promise<User>;
     create_user(fields: any): Promise<any>;
 }
+export declare function create_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
+export declare function create_login_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;

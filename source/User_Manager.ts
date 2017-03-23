@@ -12,17 +12,13 @@ export interface Settings {
   user?
 }
 
-export interface User_Info {
-  username: string
+export interface Endpoint_Info {
+
 }
 
-export interface User_Info_With_Password extends User_Info {
-  password: string
-}
 export class User_Manager {
   db: mongoose.Connection
-  User: mongoose.Model<any>
-  authenticate_middleware
+  User_Model: mongoose.Model<any>
 
   constructor(app: express.Application, mongoose_connection: mongoose.Connection, settings: Settings) {
     this.db = mongoose_connection
@@ -40,11 +36,10 @@ export class User_Manager {
     user_fields.password = String
 
     const user_schema = new mongoose.Schema(user_fields)
-    this.User = mongoose.model('User', user_schema)
-    app.use(passport.initialize())
+    this.User_Model = mongoose.model('User', user_schema)
     passport.use(new LocalStrategy(
       (username, password, done) => {
-        this.User.findOne({username: username})
+        this.User_Model.findOne({username: username})
           .then(user => {
             if (!user || user.password != password)
               throw new Bad_Request('Incorrect username or password.')
@@ -56,29 +51,28 @@ export class User_Manager {
       }
     ))
 
-    this.authenticate_middleware = function(req, res, next) {
-      passport.authenticate('local', function(error, user, info) {
-        if (error)
-          return next(error)
-
-        if (!user)
-          return next(new HTTP_Error("Failed to login."))
-
-        req.logIn(user, error => {
-          if (error)
-            return next(new HTTP_Error("Failed to login."))
-
-          return next()
-        })
-      })(req, res, next)
-    }
-
-    this.initialize_endpoints(app)
+  //   this.authenticate_middleware = function(req, res, next) {
+  //     passport.authenticate('local', function(error, user, info) {
+  //       if (error)
+  //         return next(error)
+  //
+  //       if (!user)
+  //         return next(new HTTP_Error("Failed to login."))
+  //
+  //       req.logIn(user, error => {
+  //         if (error)
+  //           return next(new HTTP_Error("Failed to login."))
+  //
+  //         return next()
+  //       })
+  //     })(req, res, next)
+  //   }
+  //
   }
 
-  get_user(username): Promise<User_Info> {
-    return new Promise((resolve, reject) => this.User.findOne({username: username}))
-      .then((user: User_Info_With_Password) => {
+  get_user(username): Promise<User> {
+    return new Promise((resolve, reject) => this.User_Model.findOne({username: username}))
+      .then((user: User_With_Password) => {
         if (user) {
           delete user.password
         }
@@ -86,37 +80,28 @@ export class User_Manager {
       })
   }
 
-  initialize_endpoints(app) {
-
-    lawn.initialize_endpoints(app, [
-
-      {
-        method: Method.get,
-        path: "user",
-        middleware: [this.authenticate_middleware],
-        action: function(request) {
-          return Promise.resolve()
-        }
-      },
-
-      {
-        method: Method.post,
-        path: "user/login",
-        middleware: [this.authenticate_middleware],
-        action: function(request) {
-          return Promise.resolve()
-        }
-      }
-
-    ])
-  }
-
-  get_authenticate_middleware() {
-    return this.authenticate_middleware
-  }
-
   create_user(fields): Promise<any> {
-    const user = new this.User(fields)
+    const user = new this.User_Model(fields)
     return user.save()
   }
+}
+
+export function create_user_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
+  lawn.create_endpoint_with_defaults(app, {
+    method: Method.get,
+    path: "user",
+    action: function(request) {
+      return Promise.resolve()
+    }
+  }, overrides)
+}
+
+export function create_login_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
+  lawn.create_endpoint_with_defaults(app, {
+    method: Method.post,
+    path: "user/login",
+    action: function(request) {
+      return Promise.resolve()
+    }
+  }, overrides)
 }
