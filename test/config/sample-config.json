@@ -1,6 +1,9 @@
 {
   "database": {
-    "url": "localhost/vineyard_users_test"
+    "host": "localhost",
+    "database": "vineyard_users",
+    "username": "root",
+    "password": ""
   },
   "api": {
     "port":" 3000"

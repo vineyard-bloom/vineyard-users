@@ -1,8 +1,8 @@
 import * as express from 'express'
-import * as mongoose from 'mongoose'
 import * as lawn from 'vineyard-lawn'
 import {User_Manager} from '../../source/index'
 import * as vineyard_users from '../../source/index'
+import * as Sequelize from 'sequelize'
 
 const config = require('../config/config.json')
 
@@ -13,15 +13,11 @@ export class Server {
 
   constructor() {
     this.server = new lawn.Server()
+    this.server.enable_cors()
   }
 
-  private start_mongoose(): Promise<void> {
-    require('mongoose').Promise = global.Promise
-    return mongoose.connect('mongodb://' + config.database.url)
-      .then(() => {
-        this.db = mongoose.connection
-        console.log('Connected to Mongo.')
-      })
+  private start_database() {
+    this.db = new Sequelize(config.database)
   }
 
   private start_api(): Promise<void> {
@@ -29,15 +25,14 @@ export class Server {
   }
 
   create_endpoints() {
-    vineyard_users.create_user_endpoint(this.server.get_app())
-    vineyard_users.create_login_endpoint(this.server.get_app())
+    this.user_manager.create_all_endpoints(this.server.get_app())
   }
 
   start() {
-    return this.start_mongoose()
-      .then(() => this.user_manager = new User_Manager(this.server.get_app(), this.db, {secret: 'test'}))
-      .then(() => this.create_endpoints())
-      .then(() => this.start_api())
+    this.start_database()
+    this.user_manager = new User_Manager(this.server.get_app(), this.db, {secret: 'test'})
+    this.create_endpoints()
+    return this.start_api()
   }
 
   get_url() {

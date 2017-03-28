@@ -1,73 +1,73 @@
 const session = require('express-session');
-const mongo_store = require('connect-mongo')(session);
 import {Method, HTTP_Error, Bad_Request} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
-import * as mongoose from 'mongoose'
-const passport = require('passport')
-const LocalStrategy = require('passport-local').Strategy
+import * as Sequelize from 'sequelize'
 
 export interface Settings {
   secret: string
   user?
-}
-
-export interface Endpoint_Info {
-
+  cookie?
 }
 
 export class User_Manager {
-  db: mongoose.Connection
-  User_Model: mongoose.Model<any>
+  db: Sequelize.Sequelize
+  User_Model: any
+  Session_Model
 
-  constructor(app: express.Application, mongoose_connection: mongoose.Connection, settings: Settings) {
-    this.db = mongoose_connection
+  constructor(app: express.Application, db: Sequelize.Sequelize, settings: Settings) {
+    this.db = db
+
+    const SequelizeStore = require('connect-session-sequelize')(session.Store)
+
+    const user_fields = settings.user || {}
+    user_fields.username = {
+      type: Sequelize.STRING,
+      allowNull: false,
+      unique: true,
+    }
+    user_fields.password = {
+      type: Sequelize.STRING,
+      allowNull: false
+    }
+
+    this.User_Model = this.db.define('user', user_fields, {
+      underscored: true,
+      createdAt: 'created',
+      updatedAt: 'modified',
+    })
+
+    this.Session_Model = db.define('session', {
+        sid: {
+          type: Sequelize.STRING,
+          primaryKey: true
+        },
+        user: Sequelize.INTEGER,
+        expires: Sequelize.DATE,
+        data: Sequelize.TEXT
+      }, {
+        underscored: true,
+        createdAt: 'created',
+        updatedAt: 'modified',
+      }
+    )
 
     app.use(session({
       secret: settings.secret,
-      store: new mongo_store({mongooseConnection: this.db}),
-      cookie: {secure: true},
+      store: new SequelizeStore({
+        db: db,
+        table: 'session',
+        extendDefaultFields: function (defaults, session) {
+          return {
+            expires: defaults.expires,
+            user: session.user
+          };
+        }
+      }),
+      cookie: settings.cookie || {},
       resave: false,
       saveUninitialized: false
     }))
-
-    const user_fields = settings.user || {}
-    user_fields.username = String
-    user_fields.password = String
-
-    const user_schema = new mongoose.Schema(user_fields)
-    this.User_Model = mongoose.model('User', user_schema)
-    passport.use(new LocalStrategy(
-      (username, password, done) => {
-        this.User_Model.findOne({username: username})
-          .then(user => {
-            if (!user || user.password != password)
-              throw new Bad_Request('Incorrect username or password.')
-
-            delete user.password
-            done(null, user)
-          })
-          .catch(error => done(error))
-      }
-    ))
-
-  //   this.authenticate_middleware = function(req, res, next) {
-  //     passport.authenticate('local', function(error, user, info) {
-  //       if (error)
-  //         return next(error)
-  //
-  //       if (!user)
-  //         return next(new HTTP_Error("Failed to login."))
-  //
-  //       req.logIn(user, error => {
-  //         if (error)
-  //           return next(new HTTP_Error("Failed to login."))
-  //
-  //         return next()
-  //       })
-  //     })(req, res, next)
-  //   }
-  //
   }
 
   get_user(username): Promise<User> {
@@ -81,27 +81,62 @@ export class User_Manager {
   }
 
   create_user(fields): Promise<any> {
-    const user = new this.User_Model(fields)
-    return user.save()
+    return this.User_Model.create(fields)
+  }
+
+  create_user_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
+    lawn.create_endpoint_with_defaults(app, {
+      method: Method.get,
+      path: "user",
+      action: request => {
+        return Promise.resolve({})
+      }
+    }, overrides)
+  }
+
+  create_login_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
+    lawn.create_endpoint_with_defaults(app, {
+      method: Method.post,
+      path: "user/login",
+      action: request => {
+        return this.User_Model.findOne({
+          where: {
+            username: request.data.username,
+            password: request.data.password
+          }
+        })
+          .then(response => {
+            if (!response)
+              throw new Bad_Request('Incorrect username or password.')
+
+            const user = response.dataValues
+            request.session.user = user.id
+
+            delete user.password
+            return user
+          })
+      }
+    }, overrides)
+  }
+
+  create_logout_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
+    lawn.create_endpoint_with_defaults(app, {
+      method: Method.post,
+      path: "user/logout",
+      action: request => {
+        if (!request.session.user)
+          throw new Bad_Request('Already logged out.')
+
+        request.session.user = null
+        return Promise.resolve({})
+      }
+    }, overrides)
+  }
+
+  create_all_endpoints(app){
+    this.create_user_endpoint(app)
+    this.create_login_endpoint(app)
+    this.create_logout_endpoint(app)
   }
 }
 
-export function create_user_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
-  lawn.create_endpoint_with_defaults(app, {
-    method: Method.get,
-    path: "user",
-    action: function(request) {
-      return Promise.resolve()
-    }
-  }, overrides)
-}
-
-export function create_login_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
-  lawn.create_endpoint_with_defaults(app, {
-    method: Method.post,
-    path: "user/login",
-    action: function(request) {
-      return Promise.resolve()
-    }
-  }, overrides)
-}
