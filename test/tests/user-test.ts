@@ -75,24 +75,24 @@ describe('user-test', function() {
       })
   })
 
-  // it('login_bad_username', function() {
-  //   return login('froggy2', 'test')
-  //     .then(function(user) {
-  //       assert(false)
-  //     })
-  //     .catch(function() {
-  //       assert(true)
-  //     })
-  // })
-  //
-  // it('login_bad_password', function() {
-  //   return login('froggy', 'test2')
-  //     .then(function(user) {
-  //       assert(false)
-  //     })
-  //     .catch(function() {
-  //       assert(true)
-  //     })
-  // })
+  it('login_bad_username', function() {
+    return login('froggy2', 'test')
+      .then(function(user) {
+        assert(false)
+      })
+      .catch(function() {
+        assert(true)
+      })
+  })
+
+  it('login_bad_password', function() {
+    return login('froggy', 'test2')
+      .then(function(user) {
+        assert(false)
+      })
+      .catch(function() {
+        assert(true)
+      })
+  })
 
 })
