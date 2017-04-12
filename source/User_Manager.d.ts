@@ -4,17 +4,23 @@
 import * as lawn from 'vineyard-lawn';
 import * as express from 'express';
 import * as Sequelize from 'sequelize';
+export interface Table_Keys {
+    id: string;
+    username: string;
+    password: string;
+}
 export interface Settings {
     secret: string;
-    user?: any;
+    user_model: any;
     cookie?: any;
+    table_keys?: any;
 }
 export declare class User_Manager {
     db: Sequelize.Sequelize;
     User_Model: any;
     Session_Model: any;
+    table_keys: Table_Keys;
     constructor(app: express.Application, db: Sequelize.Sequelize, settings: Settings);
-    get_user(username: any): Promise<User>;
     create_user(fields: any): Promise<any>;
     create_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     create_login_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;

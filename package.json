@@ -15,7 +15,7 @@
     "express": "^4.15.2",
     "express-session": "^1.15.1",
     "sequelize": "^3.30.2",
-    "vineyard-lawn": "https://github.com/silentorb/vineyard-lawn"
+    "vineyard-lawn": "0.4.0"
   },
   "devDependencies": {
     "@types/es6-promise": "0.0.32",

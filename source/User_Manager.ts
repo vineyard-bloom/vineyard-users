@@ -4,38 +4,39 @@ import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as Sequelize from 'sequelize'
 
+export interface Table_Keys {
+  id: string
+  username: string
+  password: string
+}
+
 export interface Settings {
   secret: string
-  user?
+  user_model
   cookie?
+  table_keys?
 }
 
 export class User_Manager {
   db: Sequelize.Sequelize
   User_Model: any
   Session_Model
+  table_keys: Table_Keys
 
   constructor(app: express.Application, db: Sequelize.Sequelize, settings: Settings) {
     this.db = db
+    if (!settings)
+      throw new Error("Missing User_Manager settings argument.")
+
+    this.table_keys = settings.table_keys || {
+        id: "id",
+        username: "username,",
+        password: "password"
+      }
 
     const SequelizeStore = require('connect-session-sequelize')(session.Store)
 
-    const user_fields = settings.user || {}
-    user_fields.username = {
-      type: Sequelize.STRING,
-      allowNull: false,
-      unique: true,
-    }
-    user_fields.password = {
-      type: Sequelize.STRING,
-      allowNull: false
-    }
-
-    this.User_Model = this.db.define('user', user_fields, {
-      underscored: true,
-      createdAt: 'created',
-      updatedAt: 'modified',
-    })
+    this.User_Model = settings.user_model
 
     this.Session_Model = db.define('session', {
         sid: {
@@ -66,19 +67,20 @@ export class User_Manager {
       }),
       cookie: settings.cookie || {},
       resave: false,
-      saveUninitialized: false
+      saveUninitialized: true
     }))
   }
 
-  get_user(username): Promise<User> {
-    return new Promise((resolve, reject) => this.User_Model.findOne({username: username}))
-      .then((user: User_With_Password) => {
-        if (user) {
-          delete user.password
-        }
-        return user
-      })
-  }
+  // get_user(username): Promise<User> {
+  //   return this.User_Model.findOne({username: username})
+  //     .then((user: User_With_Password) => {
+  //       if (!)
+  //       if (user) {
+  //         delete user.password
+  //       }
+  //       return user
+  //     })
+  // }
 
   create_user(fields): Promise<any> {
     return this.User_Model.create(fields)
@@ -89,7 +91,19 @@ export class User_Manager {
       method: Method.get,
       path: "user",
       action: request => {
-        return Promise.resolve({})
+        return this.User_Model.findOne({
+          where: {
+            id: request.session.user
+          }
+        })
+          .then(response => {
+            if (!response)
+              throw new Bad_Request('Invalid user id.')
+
+            const user = response.dataValues
+            delete user.password
+            return user
+          })
       }
     }, overrides)
   }
@@ -133,7 +147,7 @@ export class User_Manager {
     }, overrides)
   }
 
-  create_all_endpoints(app){
+  create_all_endpoints(app) {
     this.create_user_endpoint(app)
     this.create_login_endpoint(app)
     this.create_logout_endpoint(app)

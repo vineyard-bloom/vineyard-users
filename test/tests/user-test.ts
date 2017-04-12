@@ -1,6 +1,5 @@
 import * as assert from 'assert'
 import {Server} from "../source/server"
-import * as vineyard_mongoose from "vineyard-mongoose"
 
 require('source-map-support').install()
 

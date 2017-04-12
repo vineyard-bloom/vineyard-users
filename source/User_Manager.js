@@ -6,22 +6,15 @@ var Sequelize = require('sequelize');
 var User_Manager = (function () {
     function User_Manager(app, db, settings) {
         this.db = db;
+        if (!settings)
+            throw new Error("Missing User_Manager settings argument.");
+        this.table_keys = settings.table_keys || {
+            id: "id",
+            username: "username,",
+            password: "password"
+        };
         var SequelizeStore = require('connect-session-sequelize')(session.Store);
-        var user_fields = settings.user || {};
-        user_fields.username = {
-            type: Sequelize.STRING,
-            allowNull: false,
-            unique: true,
-        };
-        user_fields.password = {
-            type: Sequelize.STRING,
-            allowNull: false
-        };
-        this.User_Model = this.db.define('user', user_fields, {
-            underscored: true,
-            createdAt: 'created',
-            updatedAt: 'modified',
-        });
+        this.User_Model = settings.user_model;
         this.Session_Model = db.define('session', {
             sid: {
                 type: Sequelize.STRING,
@@ -49,29 +42,41 @@ var User_Manager = (function () {
             }),
             cookie: settings.cookie || {},
             resave: false,
-            saveUninitialized: false
+            saveUninitialized: true
         }));
     }
-    User_Manager.prototype.get_user = function (username) {
-        var _this = this;
-        return new Promise(function (resolve, reject) { return _this.User_Model.findOne({ username: username }); })
-            .then(function (user) {
-            if (user) {
-                delete user.password;
-            }
-            return user;
-        });
-    };
+    // get_user(username): Promise<User> {
+    //   return this.User_Model.findOne({username: username})
+    //     .then((user: User_With_Password) => {
+    //       if (!)
+    //       if (user) {
+    //         delete user.password
+    //       }
+    //       return user
+    //     })
+    // }
     User_Manager.prototype.create_user = function (fields) {
         return this.User_Model.create(fields);
     };
     User_Manager.prototype.create_user_endpoint = function (app, overrides) {
+        var _this = this;
         if (overrides === void 0) { overrides = {}; }
         lawn.create_endpoint_with_defaults(app, {
             method: vineyard_lawn_1.Method.get,
             path: "user",
             action: function (request) {
-                return Promise.resolve({});
+                return _this.User_Model.findOne({
+                    where: {
+                        id: request.session.user
+                    }
+                })
+                    .then(function (response) {
+                    if (!response)
+                        throw new vineyard_lawn_1.Bad_Request('Invalid user id.');
+                    var user = response.dataValues;
+                    delete user.password;
+                    return user;
+                });
             }
         }, overrides);
     };

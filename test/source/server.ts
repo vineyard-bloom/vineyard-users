@@ -1,4 +1,3 @@
-import * as express from 'express'
 import * as lawn from 'vineyard-lawn'
 import {User_Manager} from '../../source/index'
 import * as vineyard_users from '../../source/index'
@@ -13,7 +12,6 @@ export class Server {
 
   constructor() {
     this.server = new lawn.Server()
-    this.server.enable_cors()
   }
 
   private start_database() {
@@ -30,7 +28,26 @@ export class Server {
 
   start() {
     this.start_database()
-    this.user_manager = new User_Manager(this.server.get_app(), this.db, {secret: 'test'})
+
+    const user_model = this.db.define('User', {
+      username: {
+        type: Sequelize.STRING,
+      },
+      password: {
+        type: Sequelize.STRING,
+        allowNull: false
+      }
+    }, {
+      underscored: true,
+      createdAt: 'created',
+      updatedAt: 'modified',
+    })
+
+    this.user_manager = new User_Manager(this.server.get_app(), this.db, {
+      secret: 'test',
+      user_model: user_model
+    })
+
     this.create_endpoints()
     return this.start_api()
   }
