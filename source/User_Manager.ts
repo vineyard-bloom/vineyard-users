@@ -3,6 +3,7 @@ import {Method, HTTP_Error, Bad_Request} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as Sequelize from 'sequelize'
+const bcrypt = require('bcrypt')
 
 export interface Table_Keys {
   id: string
@@ -26,7 +27,10 @@ export class User_Manager {
   constructor(app: express.Application, db: Sequelize.Sequelize, settings: Settings) {
     this.db = db
     if (!settings)
-      throw new Error("Missing User_Manager settings argument.")
+      throw new Error("Missing settings argument.")
+
+    if (!settings.user_model)
+      throw new Error("Missing user_model settings argument.")
 
     this.table_keys = settings.table_keys || {
         id: "id",
@@ -43,7 +47,7 @@ export class User_Manager {
           type: Sequelize.STRING,
           primaryKey: true
         },
-        user: Sequelize.INTEGER,
+        user: Sequelize.UUID,
         expires: Sequelize.DATE,
         data: Sequelize.TEXT
       }, {
@@ -83,7 +87,55 @@ export class User_Manager {
   // }
 
   create_user(fields): Promise<any> {
-    return this.User_Model.create(fields)
+    if (!fields.username)
+      throw new lawn.Bad_Request("Missing username field")
+
+    if (!fields.password)
+      throw new lawn.Bad_Request("Missing password field")
+
+    return bcrypt.hash(fields.password, 10)
+      .then(salt_and_hash => {
+        fields.password = salt_and_hash
+        return this.User_Model.create(fields)
+      })
+  }
+
+  sanitize(user: User_With_Password): User {
+    const result = Object.assign({}, user)
+    delete result.password
+    delete result.salt
+    return result
+  }
+
+  create_login_handler(): lawn.Response_Generator {
+    return request => {
+      return this.User_Model.first({username: request.data.username})
+        .then(response => {
+          if (!response)
+            throw new Bad_Request('Incorrect username or password.')
+
+          return bcrypt.compare(request.data.password, response.password)
+            .then(success => {
+              if (!success)
+                throw new Bad_Request('Incorrect username or password.')
+
+              const user = response
+              request.session.user = user.id
+
+              return this.sanitize(user)
+            })
+        })
+    }
+  }
+
+  create_logout_handler(): lawn.Response_Generator {
+    return request => {
+      if (!request.session.user)
+        throw new Bad_Request('Already logged out.')
+
+      request.session.user = null
+      return Promise.resolve({})
+    }
   }
 
   create_user_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
@@ -91,18 +143,13 @@ export class User_Manager {
       method: Method.get,
       path: "user",
       action: request => {
-        return this.User_Model.findOne({
-          where: {
-            id: request.session.user
-          }
-        })
+        return this.User_Model.get(request.session.user)
           .then(response => {
             if (!response)
               throw new Bad_Request('Invalid user id.')
 
             const user = response.dataValues
-            delete user.password
-            return user
+            return this.sanitize(user)
           })
       }
     }, overrides)
@@ -112,24 +159,7 @@ export class User_Manager {
     lawn.create_endpoint_with_defaults(app, {
       method: Method.post,
       path: "user/login",
-      action: request => {
-        return this.User_Model.findOne({
-          where: {
-            username: request.data.username,
-            password: request.data.password
-          }
-        })
-          .then(response => {
-            if (!response)
-              throw new Bad_Request('Incorrect username or password.')
-
-            const user = response.dataValues
-            request.session.user = user.id
-
-            delete user.password
-            return user
-          })
-      }
+      action: this.create_login_handler()
     }, overrides)
   }
 
@@ -137,13 +167,7 @@ export class User_Manager {
     lawn.create_endpoint_with_defaults(app, {
       method: Method.post,
       path: "user/logout",
-      action: request => {
-        if (!request.session.user)
-          throw new Bad_Request('Already logged out.')
-
-        request.session.user = null
-        return Promise.resolve({})
-      }
+      action: this.create_logout_handler()
     }, overrides)
   }
 
@@ -151,6 +175,11 @@ export class User_Manager {
     this.create_user_endpoint(app)
     this.create_login_endpoint(app)
     this.create_logout_endpoint(app)
+  }
+
+  require_logged_in(request: lawn.Request) {
+    if (!request.session.user)
+      throw new lawn.Needs_Login()
   }
 }
 

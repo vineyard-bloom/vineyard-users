@@ -9,4 +9,5 @@ interface User {
 }
 interface User_With_Password extends User {
     password: string;
+    salt: string;
 }

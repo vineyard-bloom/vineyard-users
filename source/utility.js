@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function has_role(user, role) {
     var role_id;
     if (typeof role == 'number') {

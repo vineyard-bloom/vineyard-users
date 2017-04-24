@@ -2,6 +2,8 @@ import * as lawn from 'vineyard-lawn'
 import {User_Manager} from '../../source/index'
 import * as vineyard_users from '../../source/index'
 import * as Sequelize from 'sequelize'
+import {Schema} from "../../../vineyard-schema/source/scheming";
+import {Modeler} from "../../../vineyard-ground/source/modeler";
 
 const config = require('../config/config.json')
 
@@ -29,23 +31,24 @@ export class Server {
   start() {
     this.start_database()
 
-    const user_model = this.db.define('User', {
-      username: {
-        type: Sequelize.STRING,
-      },
-      password: {
-        type: Sequelize.STRING,
-        allowNull: false
+    const schema = new Schema({
+      "User": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "unique": true
+          },
+          "password": {
+            "type": "string"
+          }
+        }
       }
-    }, {
-      underscored: true,
-      createdAt: 'created',
-      updatedAt: 'modified',
     })
+    const modeler = new Modeler(this.db, schema)
 
     this.user_manager = new User_Manager(this.server.get_app(), this.db, {
       secret: 'test',
-      user_model: user_model
+      user_model: modeler.collections.User
     })
 
     this.create_endpoints()
