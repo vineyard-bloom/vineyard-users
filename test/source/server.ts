@@ -1,9 +1,11 @@
 import * as lawn from 'vineyard-lawn'
 import {User_Manager} from '../../source/index'
 import * as vineyard_users from '../../source/index'
+import * as lawn from 'vineyard-lawn'
 import * as Sequelize from 'sequelize'
 import {Schema} from "../../../vineyard-schema/source/scheming";
 import {Modeler} from "../../../vineyard-ground/source/modeler";
+import {initialize_2fa} from "../../source/two-factor";
 
 const config = require('../config/config.json')
 
@@ -26,6 +28,14 @@ export class Server {
 
   create_endpoints() {
     this.user_manager.create_all_endpoints(this.server.get_app())
+
+    this.server.add_endpoints([
+      {
+        method: lawn.Method.post,
+        path: 'user',
+        action: request => this.user_manager.create_user_with_2fa(request)
+      }
+    ])
   }
 
   start() {
@@ -40,6 +50,12 @@ export class Server {
           },
           "password": {
             "type": "string"
+          },
+          "two_factor_secret": {
+            "type": "string"
+          },
+          "two_factor_enabled": {
+            "type": "bool"
           }
         }
       }
@@ -52,6 +68,8 @@ export class Server {
     })
 
     this.create_endpoints()
+    initialize_2fa(this.server.get_app())
+
     return this.start_api()
   }
 

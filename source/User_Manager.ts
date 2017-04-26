@@ -3,6 +3,8 @@ import {Method, HTTP_Error, Bad_Request} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as Sequelize from 'sequelize'
+import * as two_factor from './two-factor'
+
 const bcrypt = require('bcrypt')
 
 export interface Table_Keys {
@@ -16,6 +18,13 @@ export interface Settings {
   user_model
   cookie?
   table_keys?
+}
+
+function sanitize(user: User_With_Password): User {
+  const result = Object.assign({}, user)
+  delete result.password
+  delete result.salt
+  return result
 }
 
 export class User_Manager {
@@ -86,46 +95,73 @@ export class User_Manager {
   //     })
   // }
 
-  create_user(fields): Promise<any> {
+  prepare_new_user(fields): Promise<User> {
     if (!fields.username)
-      throw new lawn.Bad_Request("Missing username field")
+      throw new Bad_Request("Missing username field")
 
     if (!fields.password)
-      throw new lawn.Bad_Request("Missing password field")
+      throw new Bad_Request("Missing password field")
 
-    return bcrypt.hash(fields.password, 10)
-      .then(salt_and_hash => {
-        fields.password = salt_and_hash
+    return this.User_Model.first_or_null({username: fields.username}).select(['id'])
+      .then(user => {
+        if (user)
+          throw new Bad_Request("That username is already taken.")
+
+        return bcrypt.hash(fields.password, 10)
+          .then(salt_and_hash => {
+            fields.password = salt_and_hash
+            return fields
+          })
+      })
+  }
+
+  create_user(fields): Promise<any> {
+    return this.prepare_new_user(fields)
+      .then(user => this.User_Model.create(fields))
+  }
+
+  create_user_with_2fa(request:lawn.Request): Promise<User> {
+    const fields = request.data
+    return this.prepare_new_user(fields)
+      .then(user => {
+        fields.two_factor_secret = two_factor.verify_2fa_request(request)
+        fields.two_factor_enabled = true
+        delete fields.token
         return this.User_Model.create(fields)
       })
   }
 
-  sanitize(user: User_With_Password): User {
-    const result = Object.assign({}, user)
-    delete result.password
-    delete result.salt
-    return result
+  private check_login(request) {
+    return this.User_Model.first({username: request.data.username})
+      .then(response => {
+        if (!response)
+          throw new Bad_Request('Incorrect username or password.')
+
+        return bcrypt.compare(request.data.password, response.password)
+          .then(success => {
+            if (!success)
+              throw new Bad_Request('Incorrect username or password.')
+
+            const user = response
+            request.session.user = user.id
+            return user
+          })
+      })
   }
 
   create_login_handler(): lawn.Response_Generator {
-    return request => {
-      return this.User_Model.first({username: request.data.username})
-        .then(response => {
-          if (!response)
-            throw new Bad_Request('Incorrect username or password.')
+    return request => this.check_login(request)
+      .then(user => sanitize(user))
+  }
 
-          return bcrypt.compare(request.data.password, response.password)
-            .then(success => {
-              if (!success)
-                throw new Bad_Request('Incorrect username or password.')
+  create_login_2fa_handler(): lawn.Response_Generator {
+    return request => this.check_login(request)
+      .then(user => {
+        if (!two_factor.verify_2fa_token(user.two_factor_secret, request.data.token))
+          throw new Bad_Request("Invalid 2FA token.")
 
-              const user = response
-              request.session.user = user.id
-
-              return this.sanitize(user)
-            })
-        })
-    }
+        return sanitize(user)
+      })
   }
 
   create_logout_handler(): lawn.Response_Generator {
@@ -138,7 +174,7 @@ export class User_Manager {
     }
   }
 
-  create_user_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
+  create_get_user_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
     lawn.create_endpoint_with_defaults(app, {
       method: Method.get,
       path: "user",
@@ -149,7 +185,7 @@ export class User_Manager {
               throw new Bad_Request('Invalid user id.')
 
             const user = response.dataValues
-            return this.sanitize(user)
+            return sanitize(user)
           })
       }
     }, overrides)
@@ -172,7 +208,7 @@ export class User_Manager {
   }
 
   create_all_endpoints(app) {
-    this.create_user_endpoint(app)
+    this.create_get_user_endpoint(app)
     this.create_login_endpoint(app)
     this.create_logout_endpoint(app)
   }

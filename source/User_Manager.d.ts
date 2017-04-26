@@ -21,11 +21,14 @@ export declare class User_Manager {
     Session_Model: any;
     table_keys: Table_Keys;
     constructor(app: express.Application, db: Sequelize.Sequelize, settings: Settings);
+    prepare_new_user(fields: any): Promise<User>;
     create_user(fields: any): Promise<any>;
-    sanitize(user: User_With_Password): User;
+    create_user_with_2fa(request: lawn.Request): Promise<User>;
+    private check_login(request);
     create_login_handler(): lawn.Response_Generator;
+    create_login_2fa_handler(): lawn.Response_Generator;
     create_logout_handler(): lawn.Response_Generator;
-    create_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
+    create_get_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     create_login_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     create_logout_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     create_all_endpoints(app: any): void;

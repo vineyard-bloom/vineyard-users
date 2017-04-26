@@ -6,8 +6,8 @@ require('source-map-support').install()
 const request_original = require('request').defaults({jar: true, json: true})
 
 function request(options): Promise<any> {
-  return new Promise(function(resolve, reject) {
-    request_original(options, function(error, response, body) {
+  return new Promise(function (resolve, reject) {
+    request_original(options, function (error, response, body) {
       if (error)
         reject(error)
       else if (response.statusCode != 200)
@@ -18,22 +18,35 @@ function request(options): Promise<any> {
   })
 }
 
-describe('user-test', function() {
+function get_2fa_token_from_url(auth_url: string) {
+  const secret = auth_url.match(/secret=(.+)/)[1]
+  const speakeasy = require("speakeasy")
+  return speakeasy.totp({
+    secret: secret,
+    encoding: 'base32'
+  })
+}
+
+describe('user-test', function () {
   let server
   this.timeout(5000)
 
-  function login(username, password) {
+  function local_request(method, url, body?) {
     return request({
-      url: "http://" + server.get_url() + '/user/login',
-      method: 'post',
-      body: {
-        username: username,
-        password: password
-      }
+      url: "http://" + server.get_url() + '/' + url,
+      method: method,
+      body: body
     })
   }
 
-  before(function() {
+  function login(username, password) {
+    return local_request('user/login', 'post', {
+      username: username,
+      password: password
+    })
+  }
+
+  before(function () {
     server = new Server()
     return server.start()
       .then(() => {
@@ -45,54 +58,84 @@ describe('user-test', function() {
       })
   })
 
-  after(function() {
+  after(function () {
     // return server.stop()
   })
 
-  it('login_success', function() {
+  it('login_success', function () {
     return login('froggy', 'test')
-      .then(function(user) {
+      .then(function (user) {
         assert.equal('froggy', user.username)
         assert.equal(undefined, user.password)
         return server.user_manager.Session_Model.findOne()
-          .then(result=> {
+          .then(result => {
             assert(result)
             // assert.equal(1, result.dataValues.user)
           })
       })
-      .then(function() {
+      .then(function () {
         return request({
           url: "http://" + server.get_url() + '/user/logout',
           method: 'post'
         })
       })
-      .then(function() {
+      .then(function () {
         return server.user_manager.Session_Model.findOne()
-          .then(result=> {
+          .then(result => {
             assert(result)
             assert.equal(null, result.dataValues.user)
           })
       })
   })
 
-  it('login_bad_username', function() {
+  it('login_bad_username', function () {
     return login('froggy2', 'test')
-      .then(function(user) {
+      .then(function (user) {
         assert(false)
       })
-      .catch(function() {
+      .catch(function () {
         assert(true)
       })
   })
 
-  it('login_bad_password', function() {
+  it('login_bad_password', function () {
     return login('froggy', 'test2')
-      .then(function(user) {
+      .then(function (user) {
         assert(false)
       })
-      .catch(function() {
+      .catch(function () {
         assert(true)
       })
   })
 
+  it('2fa', function () {
+    return local_request('get', 'user/2fa')
+      .then(response => {
+        console.log('response', response)
+        const token = get_2fa_token_from_url(response.auth_url)
+        return local_request('post', 'user/2fa', {token: token})
+          .then(response => {
+            assert(true)
+          })
+      })
+  })
+
+  it('register user with 2fa', function () {
+    return local_request('get', 'user/2fa')
+      .then(response => {
+        console.log('response', response)
+        const token = get_2fa_token_from_url(response.auth_url)
+
+        const data = {
+          username: 'wizard-thief',
+          password: 'Steals Wizards',
+          token: token
+        }
+
+        return local_request('post', 'user', data)
+          .then(response => {
+            assert(true)
+          })
+      })
+  })
 })

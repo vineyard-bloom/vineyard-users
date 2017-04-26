@@ -7,6 +7,8 @@ interface Role {
 interface User {
   username: string
   password: string
+  two_factor_secret: string
+  two_factor_enabled: boolean
   roles: Role[]
 }
 

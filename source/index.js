@@ -4,4 +4,4 @@ function __export(m) {
 }
 __export(require('./User_Manager'));
 __export(require('./utility'));
-//# sourceMappingURL=index.js.map
+__export(require('./two-factor'));
