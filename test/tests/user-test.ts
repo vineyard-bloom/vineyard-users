@@ -8,6 +8,7 @@ const request_original = require('request').defaults({jar: true, json: true})
 function request(options): Promise<any> {
   return new Promise(function (resolve, reject) {
     request_original(options, function (error, response, body) {
+      const options2 = options
       if (error)
         reject(error)
       else if (response.statusCode != 200)
@@ -40,7 +41,7 @@ describe('user-test', function () {
   }
 
   function login(username, password) {
-    return local_request('user/login', 'post', {
+    return local_request('post', 'user/login', {
       username: username,
       password: password
     })
@@ -63,13 +64,14 @@ describe('user-test', function () {
   })
 
   it('login_success', function () {
-    return login('froggy', 'test')
+    return local_request('get', 'ping')
+    .then(()=> login('froggy', 'test'))
       .then(function (user) {
         assert.equal('froggy', user.username)
         assert.equal(undefined, user.password)
-        return server.user_manager.Session_Model.findOne()
+        return server.user_manager.Session_Model.findAll()
           .then(result => {
-            assert(result)
+            assert.equal(1, result.length)
             // assert.equal(1, result.dataValues.user)
           })
       })
@@ -124,7 +126,7 @@ describe('user-test', function () {
     return local_request('get', 'user/2fa')
       .then(response => {
         console.log('response', response)
-        const token = get_2fa_token_from_url(response.auth_url)
+        const token = get_2fa_token_from_url(response.secret_url)
 
         const data = {
           username: 'wizard-thief',

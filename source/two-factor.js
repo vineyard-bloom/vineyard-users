@@ -6,7 +6,8 @@ function get_2fa_token() {
         var secret = speakeasy.generateSecret();
         request.session.two_factor_secret = secret.base32;
         return Promise.resolve({
-            auth_url: secret.otpauth_url
+            secret: secret.base32,
+            secret_url: secret.otpauth_url
         });
     };
 }
@@ -70,3 +71,4 @@ function initialize_2fa(app, preprocessor) {
     ], preprocessor);
 }
 exports.initialize_2fa = initialize_2fa;
+//# sourceMappingURL=two-factor.js.map

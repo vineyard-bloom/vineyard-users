@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function has_role(user, role) {
     var role_id;
     if (typeof role == 'number') {
@@ -27,3 +28,4 @@ function has_any_role(user, roles) {
     return false;
 }
 exports.has_any_role = has_any_role;
+//# sourceMappingURL=utility.js.map

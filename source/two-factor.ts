@@ -6,7 +6,8 @@ export function get_2fa_token(): Response_Generator {
     const secret = speakeasy.generateSecret()
     request.session.two_factor_secret = secret.base32
     return Promise.resolve({
-      auth_url: secret.otpauth_url
+      secret: secret.base32,
+      secret_url: secret.otpauth_url
     })
   }
 }

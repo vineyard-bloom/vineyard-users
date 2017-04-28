@@ -34,6 +34,13 @@ export class Server {
         method: lawn.Method.post,
         path: 'user',
         action: request => this.user_manager.create_user_with_2fa(request)
+      },
+
+      // Used to test that extra sessions aren't being created
+      {
+        method: lawn.Method.get,
+        path: 'ping',
+        action: request => Promise.resolve({})
       }
     ])
   }

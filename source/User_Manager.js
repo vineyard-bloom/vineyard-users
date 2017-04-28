@@ -1,9 +1,10 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var session = require('express-session');
-var vineyard_lawn_1 = require('vineyard-lawn');
-var lawn = require('vineyard-lawn');
-var Sequelize = require('sequelize');
-var two_factor = require('./two-factor');
+var vineyard_lawn_1 = require("vineyard-lawn");
+var lawn = require("vineyard-lawn");
+var Sequelize = require("sequelize");
+var two_factor = require("./two-factor");
 var bcrypt = require('bcrypt');
 function sanitize(user) {
     var result = Object.assign({}, user);
@@ -179,3 +180,4 @@ var User_Manager = (function () {
     return User_Manager;
 }());
 exports.User_Manager = User_Manager;
+//# sourceMappingURL=User_Manager.js.map
