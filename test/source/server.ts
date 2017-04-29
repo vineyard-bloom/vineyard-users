@@ -6,6 +6,7 @@ import * as Sequelize from 'sequelize'
 import {Schema} from "../../../vineyard-schema/source/scheming";
 import {Modeler} from "../../../vineyard-ground/source/modeler";
 import {initialize_2fa} from "../../source/two-factor";
+import {User_Service} from "../../source/User_Service";
 
 const config = require('../config/config.json')
 
@@ -13,6 +14,7 @@ export class Server {
   private server: lawn.Server
   private db
   private user_manager: User_Manager
+  private user_service: User_Service
 
   constructor() {
     this.server = new lawn.Server()
@@ -27,7 +29,7 @@ export class Server {
   }
 
   create_endpoints() {
-    this.user_manager.create_all_endpoints(this.server.get_app())
+    this.user_service.create_all_endpoints(this.server.get_app())
 
     this.server.add_endpoints([
       {
@@ -69,9 +71,12 @@ export class Server {
     })
     const modeler = new Modeler(this.db, schema)
 
-    this.user_manager = new User_Manager(this.server.get_app(), this.db, {
-      secret: 'test',
+    this.user_manager = new User_Manager(this.db, {
       user_model: modeler.collections.User
+    })
+
+    this.user_service = new User_Service(this.server.get_app(), this.user_manager, {
+      secret: 'test',
     })
 
     this.create_endpoints()

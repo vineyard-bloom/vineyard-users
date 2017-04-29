@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var vineyard_lawn_1 = require("vineyard-lawn");
 var speakeasy = require("speakeasy");
 function get_2fa_token() {

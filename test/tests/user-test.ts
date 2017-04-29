@@ -19,8 +19,7 @@ function request(options): Promise<any> {
   })
 }
 
-function get_2fa_token_from_url(auth_url: string) {
-  const secret = auth_url.match(/secret=(.+)/)[1]
+function get_2fa_token_from_url(secret: string) {
   const speakeasy = require("speakeasy")
   return speakeasy.totp({
     secret: secret,
@@ -114,7 +113,7 @@ describe('user-test', function () {
     return local_request('get', 'user/2fa')
       .then(response => {
         console.log('response', response)
-        const token = get_2fa_token_from_url(response.auth_url)
+        const token = get_2fa_token_from_url(response.secret)
         return local_request('post', 'user/2fa', {token: token})
           .then(response => {
             assert(true)
@@ -126,7 +125,7 @@ describe('user-test', function () {
     return local_request('get', 'user/2fa')
       .then(response => {
         console.log('response', response)
-        const token = get_2fa_token_from_url(response.secret_url)
+        const token = get_2fa_token_from_url(response.secret)
 
         const data = {
           username: 'wizard-thief',
