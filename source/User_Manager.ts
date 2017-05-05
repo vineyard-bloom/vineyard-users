@@ -14,7 +14,7 @@ export interface Settings {
   table_keys?
 }
 
-export class User_Manager {
+export class UserManager {
   db: Sequelize.Sequelize
   User_Model: any
   user_model: any
@@ -78,4 +78,6 @@ export class User_Manager {
   }
 
 }
+
+export type User_Manager = UserManager
 

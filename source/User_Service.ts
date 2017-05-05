@@ -19,7 +19,7 @@ function sanitize(user: User_With_Password): User {
   return result
 }
 
-export class User_Service {
+export class UserService {
   user_manager: User_Manager
 
   constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings) {
@@ -145,5 +145,11 @@ export class User_Service {
   require_logged_in(request: lawn.Request) {
     if (!request.session.user)
       throw new lawn.Needs_Login()
+  }
+}
+
+export class User_Service extends UserService {
+  constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings) {
+    super(app, user_manager, settings)
   }
 }

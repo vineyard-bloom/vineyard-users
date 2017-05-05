@@ -6,7 +6,7 @@ export interface Service_Settings {
     secret: string;
     cookie?: any;
 }
-export declare class User_Service {
+export declare class UserService {
     user_manager: User_Manager;
     constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
     prepare_new_user(fields: any): Promise<User>;
@@ -19,4 +19,7 @@ export declare class User_Service {
     create_logout_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     create_all_endpoints(app: any): void;
     require_logged_in(request: lawn.Request): void;
+}
+export declare class User_Service extends UserService {
+    constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
 }

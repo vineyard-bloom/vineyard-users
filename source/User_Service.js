@@ -1,4 +1,14 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 var session = require('express-session');
 var vineyard_lawn_1 = require("vineyard-lawn");
@@ -11,8 +21,8 @@ function sanitize(user) {
     delete result.salt;
     return result;
 }
-var User_Service = (function () {
-    function User_Service(app, user_manager, settings) {
+var UserService = (function () {
+    function UserService(app, user_manager, settings) {
         this.user_manager = user_manager;
         var SequelizeStore = require('connect-session-sequelize')(session.Store);
         app.use(session({
@@ -32,7 +42,7 @@ var User_Service = (function () {
             saveUninitialized: true
         }));
     }
-    User_Service.prototype.prepare_new_user = function (fields) {
+    UserService.prototype.prepare_new_user = function (fields) {
         var _this = this;
         if (!fields.username)
             throw new vineyard_lawn_1.Bad_Request("Missing username field");
@@ -45,7 +55,7 @@ var User_Service = (function () {
             return _this.user_manager.prepare_new_user(fields);
         });
     };
-    User_Service.prototype.check_login = function (request) {
+    UserService.prototype.check_login = function (request) {
         return this.user_manager.User_Model.first({ username: request.data.username })
             .then(function (response) {
             if (!response)
@@ -60,12 +70,12 @@ var User_Service = (function () {
             });
         });
     };
-    User_Service.prototype.create_login_handler = function () {
+    UserService.prototype.create_login_handler = function () {
         var _this = this;
         return function (request) { return _this.check_login(request)
             .then(function (user) { return sanitize(user); }); };
     };
-    User_Service.prototype.create_login_2fa_handler = function () {
+    UserService.prototype.create_login_2fa_handler = function () {
         var _this = this;
         return function (request) { return _this.check_login(request)
             .then(function (user) {
@@ -74,7 +84,7 @@ var User_Service = (function () {
             return sanitize(user);
         }); };
     };
-    User_Service.prototype.create_logout_handler = function () {
+    UserService.prototype.create_logout_handler = function () {
         return function (request) {
             if (!request.session.user)
                 throw new vineyard_lawn_1.Bad_Request('Already logged out.');
@@ -82,7 +92,7 @@ var User_Service = (function () {
             return Promise.resolve({});
         };
     };
-    User_Service.prototype.create_get_user_endpoint = function (app, overrides) {
+    UserService.prototype.create_get_user_endpoint = function (app, overrides) {
         var _this = this;
         if (overrides === void 0) { overrides = {}; }
         lawn.create_endpoint_with_defaults(app, {
@@ -99,7 +109,7 @@ var User_Service = (function () {
             }
         }, overrides);
     };
-    User_Service.prototype.create_login_endpoint = function (app, overrides) {
+    UserService.prototype.create_login_endpoint = function (app, overrides) {
         if (overrides === void 0) { overrides = {}; }
         lawn.create_endpoint_with_defaults(app, {
             method: vineyard_lawn_1.Method.post,
@@ -107,7 +117,7 @@ var User_Service = (function () {
             action: this.create_login_handler()
         }, overrides);
     };
-    User_Service.prototype.create_logout_endpoint = function (app, overrides) {
+    UserService.prototype.create_logout_endpoint = function (app, overrides) {
         if (overrides === void 0) { overrides = {}; }
         lawn.create_endpoint_with_defaults(app, {
             method: vineyard_lawn_1.Method.post,
@@ -115,16 +125,24 @@ var User_Service = (function () {
             action: this.create_logout_handler()
         }, overrides);
     };
-    User_Service.prototype.create_all_endpoints = function (app) {
+    UserService.prototype.create_all_endpoints = function (app) {
         this.create_get_user_endpoint(app);
         this.create_login_endpoint(app);
         this.create_logout_endpoint(app);
     };
-    User_Service.prototype.require_logged_in = function (request) {
+    UserService.prototype.require_logged_in = function (request) {
         if (!request.session.user)
             throw new lawn.Needs_Login();
     };
-    return User_Service;
+    return UserService;
 }());
+exports.UserService = UserService;
+var User_Service = (function (_super) {
+    __extends(User_Service, _super);
+    function User_Service(app, user_manager, settings) {
+        return _super.call(this, app, user_manager, settings) || this;
+    }
+    return User_Service;
+}(UserService));
 exports.User_Service = User_Service;
 //# sourceMappingURL=User_Service.js.map
