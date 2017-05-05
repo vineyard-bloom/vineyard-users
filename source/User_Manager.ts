@@ -79,5 +79,8 @@ export class UserManager {
 
 }
 
-export type User_Manager = UserManager
-
+export class User_Manager extends UserManager {
+  constructor(db: Sequelize.Sequelize, settings: Settings) {
+    super(db, settings)
+  }
+}

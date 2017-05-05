@@ -1,4 +1,14 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 var Sequelize = require("sequelize");
 var two_factor = require("./two-factor");
@@ -56,4 +66,12 @@ var UserManager = (function () {
     return UserManager;
 }());
 exports.UserManager = UserManager;
+var User_Manager = (function (_super) {
+    __extends(User_Manager, _super);
+    function User_Manager(db, settings) {
+        return _super.call(this, db, settings) || this;
+    }
+    return User_Manager;
+}(UserManager));
+exports.User_Manager = User_Manager;
 //# sourceMappingURL=User_Manager.js.map
