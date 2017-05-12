@@ -99,11 +99,10 @@ var UserService = (function () {
             method: vineyard_lawn_1.Method.get,
             path: "user",
             action: function (request) {
-                return _this.user_manager.User_Model.get(request.session.user)
-                    .then(function (response) {
-                    if (!response)
+                return _this.user_manager.getUser(request.session.user)
+                    .then(function (user) {
+                    if (!user)
                         throw new vineyard_lawn_1.Bad_Request('Invalid user id.');
-                    var user = response.dataValues;
                     return sanitize(user);
                 });
             }
@@ -133,6 +132,22 @@ var UserService = (function () {
     UserService.prototype.require_logged_in = function (request) {
         if (!request.session.user)
             throw new lawn.Needs_Login();
+    };
+    // create_user_with_2fa(request: lawn.Request): Promise<User> {
+    //   const fields = request.data
+    //   return this.prepare_new_user(fields)
+    //     .then(user => {
+    //       fields.two_factor_secret = two_factor.verify_2fa_request(request)
+    //       fields.two_factor_enabled = true
+    //       delete fields.token
+    //       return this.User_Model.create(fields)
+    //     })
+    // }
+    UserService.prototype.addUserToRequest = function (request) {
+        if (request.user)
+            return Promise.resolve(request.user);
+        return this.user_manager.getUser(request.session.user)
+            .then(function (user) { return request.user = sanitize(user); });
     };
     return UserService;
 }());

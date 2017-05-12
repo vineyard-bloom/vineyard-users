@@ -1,6 +1,6 @@
 import {User_Manager} from "./User_Manager";
 const session = require('express-session');
-import {Method, HTTP_Error, Bad_Request} from 'vineyard-lawn'
+import {Method, HTTP_Error, Bad_Request, Request} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as two_factor from './two-factor'
@@ -108,12 +108,11 @@ export class UserService {
       method: Method.get,
       path: "user",
       action: request => {
-        return this.user_manager.User_Model.get(request.session.user)
-          .then(response => {
-            if (!response)
+        return this.user_manager.getUser(request.session.user)
+          .then(user => {
+            if (!user)
               throw new Bad_Request('Invalid user id.')
 
-            const user = response.dataValues
             return sanitize(user)
           })
       }
@@ -146,6 +145,26 @@ export class UserService {
     if (!request.session.user)
       throw new lawn.Needs_Login()
   }
+
+  // create_user_with_2fa(request: lawn.Request): Promise<User> {
+  //   const fields = request.data
+  //   return this.prepare_new_user(fields)
+  //     .then(user => {
+  //       fields.two_factor_secret = two_factor.verify_2fa_request(request)
+  //       fields.two_factor_enabled = true
+  //       delete fields.token
+  //       return this.User_Model.create(fields)
+  //     })
+  // }
+
+  addUserToRequest(request: Request): Promise<User> {
+    if (request.user)
+      return Promise.resolve(request.user)
+
+    return this.user_manager.getUser(request.session.user)
+      .then(user => request.user = sanitize(user))
+  }
+
 }
 
 export class User_Service extends UserService {

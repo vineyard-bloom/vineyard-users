@@ -1,5 +1,4 @@
 import * as Sequelize from 'sequelize'
-import * as two_factor from './two-factor'
 
 const bcrypt = require('bcrypt')
 
@@ -54,6 +53,9 @@ export class UserManager {
   }
 
   prepare_new_user(fields) {
+    if (!fields.roles && this.User_Model.trellis.properties.roles)
+      fields.roles = []
+
     return bcrypt.hash(fields.password, 10)
       .then(salt_and_hash => {
         fields.password = salt_and_hash
@@ -66,15 +68,8 @@ export class UserManager {
       .then(user => this.User_Model.create(fields))
   }
 
-  create_user_with_2fa(request: lawn.Request): Promise<User> {
-    const fields = request.data
-    return this.prepare_new_user(fields)
-      .then(user => {
-        fields.two_factor_secret = two_factor.verify_2fa_request(request)
-        fields.two_factor_enabled = true
-        delete fields.token
-        return this.User_Model.create(fields)
-      })
+  getUser(id): Promise<User_With_Password> {
+    return this.User_Model.get(id)
   }
 
 }

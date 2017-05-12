@@ -11,7 +11,6 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var Sequelize = require("sequelize");
-var two_factor = require("./two-factor");
 var bcrypt = require('bcrypt');
 var UserManager = (function () {
     function UserManager(db, settings) {
@@ -41,6 +40,8 @@ var UserManager = (function () {
         });
     }
     UserManager.prototype.prepare_new_user = function (fields) {
+        if (!fields.roles && this.User_Model.trellis.properties.roles)
+            fields.roles = [];
         return bcrypt.hash(fields.password, 10)
             .then(function (salt_and_hash) {
             fields.password = salt_and_hash;
@@ -52,16 +53,8 @@ var UserManager = (function () {
         return this.prepare_new_user(fields)
             .then(function (user) { return _this.User_Model.create(fields); });
     };
-    UserManager.prototype.create_user_with_2fa = function (request) {
-        var _this = this;
-        var fields = request.data;
-        return this.prepare_new_user(fields)
-            .then(function (user) {
-            fields.two_factor_secret = two_factor.verify_2fa_request(request);
-            fields.two_factor_enabled = true;
-            delete fields.token;
-            return _this.User_Model.create(fields);
-        });
+    UserManager.prototype.getUser = function (id) {
+        return this.User_Model.get(id);
     };
     return UserManager;
 }());
