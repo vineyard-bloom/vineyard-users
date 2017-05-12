@@ -1,6 +1,6 @@
 # Vineyard Users
 
-Vineyard Users is a library that adds common user features to the Vineyard ecosystem.  It is built on top of Vineyard Ground and Vineyard Lawn.
+Vineyard Users is a library that adds common user features to the Vineyard ecosystem.  It is built on top of [Vineyard Ground](https://github.com/silentorb/vineyard-ground) and [Vineyard Lawn](https://github.com/silentorb/vineyard-lawn).
 
 ## Features
 
