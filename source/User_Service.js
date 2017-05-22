@@ -84,13 +84,16 @@ var UserService = (function () {
             return sanitize(user);
         }); };
     };
-    UserService.prototype.create_logout_handler = function () {
+    UserService.prototype.createLogoutHandler = function () {
         return function (request) {
             if (!request.session.user)
                 throw new vineyard_lawn_1.Bad_Request('Already logged out.');
             request.session.user = null;
             return Promise.resolve({});
         };
+    };
+    UserService.prototype.create_logout_handler = function () {
+        return this.createLogoutHandler();
     };
     UserService.prototype.create_get_user_endpoint = function (app, overrides) {
         var _this = this;

@@ -14,6 +14,7 @@ export declare class UserService {
     private check_login(request);
     create_login_handler(): lawn.Response_Generator;
     create_login_2fa_handler(): lawn.Response_Generator;
+    createLogoutHandler(): lawn.Response_Generator;
     create_logout_handler(): lawn.Response_Generator;
     create_get_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     create_login_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;

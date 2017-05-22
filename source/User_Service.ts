@@ -93,7 +93,7 @@ export class UserService {
       })
   }
 
-  create_logout_handler(): lawn.Response_Generator {
+  createLogoutHandler(): lawn.Response_Generator {
     return request => {
       if (!request.session.user)
         throw new Bad_Request('Already logged out.')
@@ -101,6 +101,10 @@ export class UserService {
       request.session.user = null
       return Promise.resolve({})
     }
+  }
+
+  create_logout_handler(): lawn.Response_Generator {
+    return this.createLogoutHandler()
   }
 
   create_get_user_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {
@@ -164,7 +168,6 @@ export class UserService {
     return this.user_manager.getUser(request.session.user)
       .then(user => request.user = sanitize(user))
   }
-
 }
 
 export class User_Service extends UserService {

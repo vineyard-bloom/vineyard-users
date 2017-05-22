@@ -13,12 +13,15 @@ export declare class UserManager {
     db: Sequelize.Sequelize;
     User_Model: any;
     user_model: any;
-    Session_Model: any;
-    table_keys: Table_Keys;
+    private sessionCollection;
+    private table_keys;
     constructor(db: Sequelize.Sequelize, settings: Settings);
     prepare_new_user(fields: any): any;
     create_user(fields: any): Promise<any>;
+    createUser(fields: any): Promise<any>;
     getUser(id: any): Promise<User_With_Password>;
+    getSessionCollection(): any;
+    getUserCollection(): any;
 }
 export declare class User_Manager extends UserManager {
     constructor(db: Sequelize.Sequelize, settings: Settings);

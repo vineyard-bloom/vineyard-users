@@ -25,7 +25,7 @@ var UserManager = (function () {
             password: "password"
         };
         this.User_Model = this.user_model = settings.user_model;
-        this.Session_Model = db.define('session', {
+        this.sessionCollection = db.define('session', {
             sid: {
                 type: Sequelize.STRING,
                 primaryKey: true
@@ -49,12 +49,21 @@ var UserManager = (function () {
         });
     };
     UserManager.prototype.create_user = function (fields) {
+        return this.createUser(fields);
+    };
+    UserManager.prototype.createUser = function (fields) {
         var _this = this;
         return this.prepare_new_user(fields)
             .then(function (user) { return _this.User_Model.create(fields); });
     };
     UserManager.prototype.getUser = function (id) {
         return this.User_Model.get(id);
+    };
+    UserManager.prototype.getSessionCollection = function () {
+        return this.sessionCollection;
+    };
+    UserManager.prototype.getUserCollection = function () {
+        return this.user_model;
     };
     return UserManager;
 }());

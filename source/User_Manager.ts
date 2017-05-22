@@ -17,8 +17,8 @@ export class UserManager {
   db: Sequelize.Sequelize
   User_Model: any
   user_model: any
-  Session_Model
-  table_keys: Table_Keys
+  private sessionCollection
+  private table_keys: Table_Keys
 
   constructor(db: Sequelize.Sequelize, settings: Settings) {
     this.db = db
@@ -36,7 +36,7 @@ export class UserManager {
 
     this.User_Model = this.user_model = settings.user_model
 
-    this.Session_Model = db.define('session', {
+    this.sessionCollection = db.define('session', {
         sid: {
           type: Sequelize.STRING,
           primaryKey: true
@@ -64,6 +64,10 @@ export class UserManager {
   }
 
   create_user(fields): Promise<any> {
+    return this.createUser(fields)
+  }
+
+  createUser(fields):Promise<any> {
     return this.prepare_new_user(fields)
       .then(user => this.User_Model.create(fields))
   }
@@ -72,6 +76,13 @@ export class UserManager {
     return this.User_Model.get(id)
   }
 
+  getSessionCollection() {
+    return this.sessionCollection
+  }
+
+  getUserCollection() {
+    return this.user_model
+  }
 }
 
 export class User_Manager extends UserManager {
