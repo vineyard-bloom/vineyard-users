@@ -56,18 +56,19 @@ describe('user-test', function () {
             return server.get_user_manager().create_user({username: 'froggy', password: 'test'})
           })
       })
-  })
+  });
 
   after(function () {
     // return server.stop()
-  })
+  });
 
   it('login_success', function () {
     return local_request('get', 'ping')
     .then(()=> login('froggy', 'test'))
       .then(function (user) {
-        assert.equal('froggy', user.username)
-        assert.equal(undefined, user.password)
+        assert.equal('froggy', user.username);
+        assert.equal(undefined, user.password);
+        console.log(server.user_manager)
         return server.user_manager.Session_Model.findAll()
           .then(result => {
             assert.equal(1, result.length)
@@ -83,11 +84,11 @@ describe('user-test', function () {
       .then(function () {
         return server.user_manager.Session_Model.findOne()
           .then(result => {
-            assert(result)
+            assert(result);
             assert.equal(null, result.dataValues.user)
           })
       })
-  })
+  });
 
   it('login_bad_username', function () {
     return login('froggy2', 'test')
@@ -137,6 +138,15 @@ describe('user-test', function () {
           .then(response => {
             assert(true)
           })
+      })
+  })
+
+  it('validate unique username', function () {
+      return local_request('post', 'user', {
+          username: 'froggy',
+          password: 'test3'
+      }).catch(response => {
+          assert(true)
       })
   })
 })

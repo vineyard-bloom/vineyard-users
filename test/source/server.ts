@@ -1,20 +1,19 @@
-import * as lawn from 'vineyard-lawn'
 import {User_Manager} from '../../source/index'
 import * as vineyard_users from '../../source/index'
 import * as lawn from 'vineyard-lawn'
 import * as Sequelize from 'sequelize'
-import {Schema} from "../../../vineyard-schema/source/scheming";
-import {Modeler} from "../../../vineyard-ground/source/modeler";
+import {Schema} from "vineyard-schema/source/scheming";
+import {Modeler} from "vineyard-ground/source/modeler";
 import {initialize_2fa} from "../../source/two-factor";
 import {User_Service} from "../../source/User_Service";
 
-const config = require('../config/config.json')
+const config = require('../config/config.json');
 
 export class Server {
-  private server: lawn.Server
-  private db
-  private user_manager: User_Manager
-  private user_service: User_Service
+  private server: lawn.Server;
+  private db;
+  private user_manager: User_Manager;
+  private user_service: User_Service;
 
   constructor() {
     this.server = new lawn.Server()
@@ -29,7 +28,7 @@ export class Server {
   }
 
   create_endpoints() {
-    this.user_service.create_all_endpoints(this.server.get_app())
+    this.user_service.create_all_endpoints(this.server.get_app());
 
     this.server.add_endpoints([
       {

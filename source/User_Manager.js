@@ -48,13 +48,17 @@ var UserManager = (function () {
             return fields;
         });
     };
-    UserManager.prototype.create_user = function (fields) {
-        return this.createUser(fields);
+    UserManager.prototype.create_user = function (fields, uniqueField) {
+        return this.createUser(fields, uniqueField);
     };
-    UserManager.prototype.createUser = function (fields) {
+    UserManager.prototype.createUser = function (fields, uniqueField) {
         var _this = this;
-        return this.prepare_new_user(fields)
-            .then(function (user) { return _this.User_Model.create(fields); });
+        this.sanitizeRequest(fields);
+        return this.checkUniqueness(fields, uniqueField)
+            .then(function () {
+            return _this.prepare_new_user(fields)
+                .then(function (user) { return _this.User_Model.create(fields); });
+        });
     };
     UserManager.prototype.getUser = function (id) {
         return this.User_Model.get(id);
@@ -64,6 +68,34 @@ var UserManager = (function () {
     };
     UserManager.prototype.getUserCollection = function () {
         return this.user_model;
+    };
+    UserManager.prototype.validateParameters = function (request) {
+        var invalidUserChars = request.username.match(/[^\w_]/g);
+        var invalidPassChars = request.username.match(/[^\w_\-?!]/g);
+        return {
+            valid: (!invalidUserChars && !invalidPassChars),
+            invalidChars: {
+                username: invalidUserChars,
+                password: invalidPassChars
+            }
+        };
+    };
+    UserManager.prototype.sanitizeRequest = function (request) {
+        var check = this.validateParameters(request);
+        if (check.valid !== true) {
+            throw new Error("Parameters contain the following invalid characters " + check.invalidChars);
+        }
+    };
+    UserManager.prototype.checkUniqueness = function (request, field) {
+        if (field === void 0) { field = 'username'; }
+        var filter = {};
+        filter[field] = request[field];
+        return this.User_Model.first_or_null(filter)
+            .then(function (user) {
+            if (user) {
+                throw new Error("User validation error: " + field + " must be unique");
+            }
+        });
     };
     return UserManager;
 }());
