@@ -28,4 +28,18 @@ function has_any_role(user, roles) {
     return false;
 }
 exports.has_any_role = has_any_role;
+function promiseEach(items, action) {
+    if (items.length == 0)
+        return Promise.resolve();
+    var result = action(items[0]);
+    var _loop_1 = function (i) {
+        result = result
+            .then(function () { return action(items[i]); });
+    };
+    for (var i = 1; i < items.length; ++i) {
+        _loop_1(i);
+    }
+    return result;
+}
+exports.promiseEach = promiseEach;
 //# sourceMappingURL=utility.js.map

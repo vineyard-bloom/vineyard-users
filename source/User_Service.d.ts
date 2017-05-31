@@ -22,6 +22,7 @@ export declare class UserService {
     create_all_endpoints(app: any): void;
     require_logged_in(request: lawn.Request): void;
     addUserToRequest(request: Request): Promise<User>;
+    fieldExists(request: Request, fieldOptions: string[]): Promise<boolean>;
 }
 export declare class User_Service extends UserService {
     constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);

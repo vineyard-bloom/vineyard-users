@@ -42,19 +42,21 @@ var UserService = (function () {
             saveUninitialized: true
         }));
     }
-    UserService.prototype.prepare_new_user = function (fields) {
-        var _this = this;
-        if (!fields.username)
-            throw new vineyard_lawn_1.Bad_Request("Missing username field");
-        if (!fields.password)
-            throw new vineyard_lawn_1.Bad_Request("Missing password field");
-        return this.user_manager.User_Model.first_or_null({ username: fields.username }).select(['id'])
-            .then(function (user) {
-            if (user)
-                throw new vineyard_lawn_1.Bad_Request("That username is already taken.");
-            return _this.user_manager.prepare_new_user(fields);
-        });
-    };
+    // prepare_new_user(fields): Promise<User> {
+    //   if (!fields.username)
+    //     throw new Bad_Request("Missing username field")
+    //
+    //   if (!fields.password)
+    //     throw new Bad_Request("Missing password field")
+    //
+    //   return this.user_manager.User_Model.first_or_null({username: fields.username}).select(['id'])
+    //     .then(user => {
+    //       if (user)
+    //         throw new Bad_Request("That username is already taken.")
+    //
+    //       return this.user_manager.prepare_new_user(fields)
+    //     })
+    // }
     UserService.prototype.check_login = function (request) {
         return this.user_manager.User_Model.first({ username: request.data.username })
             .then(function (response) {
@@ -151,6 +153,16 @@ var UserService = (function () {
             return Promise.resolve(request.user);
         return this.user_manager.getUser(request.session.user)
             .then(function (user) { return request.user = sanitize(user); });
+    };
+    UserService.prototype.fieldExists = function (request, fieldOptions) {
+        var key = request.data.key;
+        var value = request.data.value;
+        if (fieldOptions.indexOf(key) == -1)
+            throw new vineyard_lawn_1.Bad_Request('Invalid user field: "' + key + '"');
+        return this.user_manager.fieldExists(key, value)
+            .then(function (result) { return ({
+            exists: result
+        }); });
     };
     return UserService;
 }());

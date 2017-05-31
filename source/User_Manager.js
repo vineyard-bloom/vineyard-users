@@ -11,6 +11,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var Sequelize = require("sequelize");
+var utility_1 = require("./utility");
 var bcrypt = require('bcrypt');
 var UserManager = (function () {
     function UserManager(db, settings) {
@@ -39,7 +40,7 @@ var UserManager = (function () {
             updatedAt: 'modified',
         });
     }
-    UserManager.prototype.prepare_new_user = function (fields) {
+    UserManager.prototype.prepareNewUser = function (fields) {
         if (!fields.roles && this.User_Model.trellis.properties.roles)
             fields.roles = [];
         return bcrypt.hash(fields.password, 10)
@@ -48,13 +49,19 @@ var UserManager = (function () {
             return fields;
         });
     };
+    UserManager.prototype.prepare_new_user = function (fields) {
+        return this.prepareNewUser(fields);
+    };
     UserManager.prototype.create_user = function (fields, uniqueField) {
+        if (uniqueField === void 0) { uniqueField = 'username'; }
         return this.createUser(fields, uniqueField);
     };
     UserManager.prototype.createUser = function (fields, uniqueField) {
         var _this = this;
+        if (uniqueField === void 0) { uniqueField = 'username'; }
         this.sanitizeRequest(fields);
-        return this.checkUniqueness(fields, uniqueField)
+        var uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField];
+        return utility_1.promiseEach(uniqueFields, function (field) { return _this.checkUniqueness(fields, field); })
             .then(function () {
             return _this.prepare_new_user(fields)
                 .then(function (user) { return _this.User_Model.create(fields); });
@@ -86,13 +93,17 @@ var UserManager = (function () {
             throw new Error("Parameters contain the following invalid characters " + check.invalidChars);
         }
     };
-    UserManager.prototype.checkUniqueness = function (request, field) {
-        if (field === void 0) { field = 'username'; }
+    UserManager.prototype.fieldExists = function (key, value) {
         var filter = {};
-        filter[field] = request[field];
+        filter[key] = value;
         return this.User_Model.first_or_null(filter)
-            .then(function (user) {
-            if (user) {
+            .then(function (user) { return !!user; });
+    };
+    UserManager.prototype.checkUniqueness = function (user, field) {
+        if (field === void 0) { field = 'username'; }
+        return this.fieldExists(field, user[field])
+            .then(function (result) {
+            if (result) {
                 throw new Error("User validation error: " + field + " must be unique");
             }
         });

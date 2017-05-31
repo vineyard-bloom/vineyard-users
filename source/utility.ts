@@ -24,9 +24,22 @@ export function has_role(user: User, role: Role_Id_Parameter) {
 
 export function has_any_role(user: User, roles: Role_Id_Parameter[]) {
   for (let i = 0; i < roles.length; ++i) {
-    if(has_role(user, roles[i]))
+    if (has_role(user, roles[i]))
       return true
   }
 
   return false
+}
+
+export function promiseEach(items, action) {
+  if (items.length == 0)
+    return Promise.resolve()
+
+  let result = action(items[0])
+  for (let i = 1; i < items.length; ++i) {
+    result = result
+      .then(() => action(items[i]))
+  }
+
+  return result
 }

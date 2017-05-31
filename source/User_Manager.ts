@@ -1,4 +1,5 @@
 import * as Sequelize from 'sequelize'
+import {promiseEach} from "./utility";
 
 const bcrypt = require('bcrypt');
 
@@ -52,7 +53,7 @@ export class UserManager {
     )
   }
 
-  prepare_new_user(fields) {
+  prepareNewUser(fields) {
     if (!fields.roles && this.User_Model.trellis.properties.roles)
       fields.roles = [];
 
@@ -63,17 +64,22 @@ export class UserManager {
       })
   }
 
-  create_user(fields, uniqueField?): Promise<any> {
+  prepare_new_user(fields) {
+    return this.prepareNewUser(fields)
+  }
+
+  create_user(fields, uniqueField: string | string[] = 'username'): Promise<any> {
     return this.createUser(fields, uniqueField)
   }
 
-  createUser(fields, uniqueField):Promise<any> {
-    this.sanitizeRequest(fields);
-    return this.checkUniqueness(fields, uniqueField)
-        .then(() => {
-          return this.prepare_new_user(fields)
-              .then(user => this.User_Model.create(fields))
-        })
+  createUser(fields: any, uniqueField: string | string[] = 'username'): Promise<any> {
+    this.sanitizeRequest(fields)
+    const uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField]
+    return promiseEach(uniqueFields, field => this.checkUniqueness(fields, field))
+      .then(() => {
+        return this.prepare_new_user(fields)
+          .then(user => this.User_Model.create(fields))
+      })
   }
 
   getUser(id): Promise<User_With_Password> {
@@ -107,19 +113,22 @@ export class UserManager {
     }
   }
 
-  private checkUniqueness(request, field='username') {
-    const filter = {};
-    filter[field] = request[field];
+  fieldExists(key:string, value:any): Promise<boolean> {
+    const filter = {}
+    filter[key] = value
     return this.User_Model.first_or_null(filter)
-        .then((user) => {
-          if(user) {
-            throw new Error(`User validation error: ${field} must be unique`)
-          }
-        })
+      .then((user) => !!user)
+  }
+
+  checkUniqueness(user, field = 'username') {
+    return this.fieldExists(field, user[field])
+      .then(result => {
+        if (result) {
+          throw new Error(`User validation error: ${field} must be unique`)
+        }
+      })
   }
 }
-
-
 
 export class User_Manager extends UserManager {
   constructor(db: Sequelize.Sequelize, settings: Settings) {

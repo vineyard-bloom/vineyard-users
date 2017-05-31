@@ -44,21 +44,21 @@ export class UserService {
     }))
   }
 
-  prepare_new_user(fields): Promise<User> {
-    if (!fields.username)
-      throw new Bad_Request("Missing username field")
-
-    if (!fields.password)
-      throw new Bad_Request("Missing password field")
-
-    return this.user_manager.User_Model.first_or_null({username: fields.username}).select(['id'])
-      .then(user => {
-        if (user)
-          throw new Bad_Request("That username is already taken.")
-
-        return this.user_manager.prepare_new_user(fields)
-      })
-  }
+  // prepare_new_user(fields): Promise<User> {
+  //   if (!fields.username)
+  //     throw new Bad_Request("Missing username field")
+  //
+  //   if (!fields.password)
+  //     throw new Bad_Request("Missing password field")
+  //
+  //   return this.user_manager.User_Model.first_or_null({username: fields.username}).select(['id'])
+  //     .then(user => {
+  //       if (user)
+  //         throw new Bad_Request("That username is already taken.")
+  //
+  //       return this.user_manager.prepare_new_user(fields)
+  //     })
+  // }
 
   private check_login(request) {
     return this.user_manager.User_Model.first({username: request.data.username})
@@ -167,6 +167,18 @@ export class UserService {
 
     return this.user_manager.getUser(request.session.user)
       .then(user => request.user = sanitize(user))
+  }
+
+  fieldExists(request: Request, fieldOptions: string[]) {
+    const key = request.data.key
+    const value = request.data.value
+    if (fieldOptions.indexOf(key) == -1)
+      throw new Bad_Request('Invalid user field: "' + key + '"')
+
+    return this.user_manager.fieldExists(key, value)
+      .then(result => ({
+        exists: result
+      }))
   }
 }
 
