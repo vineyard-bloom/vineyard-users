@@ -16,6 +16,7 @@ export declare class UserManager {
     private sessionCollection;
     private table_keys;
     constructor(db: Sequelize.Sequelize, settings: Settings);
+    prepareNewUser(fields: any): any;
     prepare_new_user(fields: any): any;
     create_user(fields: any, uniqueField?: string | string[]): Promise<any>;
     createUser(fields: any, uniqueField?: string | string[]): Promise<any>;

@@ -10,7 +10,6 @@ export interface Service_Settings {
 export declare class UserService {
     user_manager: User_Manager;
     constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
-    prepare_new_user(fields: any): Promise<User>;
     private check_login(request);
     create_login_handler(): lawn.Response_Generator;
     create_login_2fa_handler(): lawn.Response_Generator;
@@ -22,7 +21,9 @@ export declare class UserService {
     create_all_endpoints(app: any): void;
     require_logged_in(request: lawn.Request): void;
     addUserToRequest(request: Request): Promise<User>;
-    fieldExists(request: Request, fieldOptions: string[]): Promise<boolean>;
+    fieldExists(request: Request, fieldOptions: string[]): Promise<{
+        exists: boolean;
+    }>;
 }
 export declare class User_Service extends UserService {
     constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
