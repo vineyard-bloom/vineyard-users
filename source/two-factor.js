@@ -57,8 +57,9 @@ function verify_token_and_save(user_model) {
     };
 }
 exports.verify_token_and_save = verify_token_and_save;
-function initialize_2fa(app, preprocessor) {
-    vineyard_lawn_1.create_endpoints(app, [
+function initializeTwoFactor(server) {
+    var validators = server.compileApiSchema(require('./validation/twoFactor.json'));
+    server.createPublicEndpoints([
         {
             method: vineyard_lawn_1.Method.get,
             path: "user/2fa",
@@ -67,9 +68,10 @@ function initialize_2fa(app, preprocessor) {
         {
             method: vineyard_lawn_1.Method.post,
             path: "user/2fa",
-            action: verify_2fa_token_handler()
+            action: verify_2fa_token_handler(),
+            validator: validators.verifyTwoFactor
         },
-    ], preprocessor);
+    ]);
 }
-exports.initialize_2fa = initialize_2fa;
+exports.initializeTwoFactor = initializeTwoFactor;
 //# sourceMappingURL=two-factor.js.map

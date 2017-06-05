@@ -130,7 +130,7 @@ var UserService = (function () {
             .then(function (user) { return request.user = sanitize(user); });
     };
     UserService.prototype.loadValidationHelpers = function (ajv) {
-        ajv.addSchema(require('./validation-helpers.json'));
+        ajv.addSchema(require('./validation/helpers.json'));
     };
     UserService.prototype.fieldExists = function (request, fieldOptions) {
         var key = request.data.key;

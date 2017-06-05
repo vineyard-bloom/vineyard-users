@@ -62,8 +62,10 @@ export function verify_token_and_save(user_model): Response_Generator {
   }
 }
 
-export function initialize_2fa(app, preprocessor?) {
-  create_endpoints(app, [
+export function initializeTwoFactor(server) {
+  const validators = server.compileApiSchema(require('./validation/twoFactor.json'))
+
+  server.createPublicEndpoints([
 
     {
       method: Method.get,
@@ -74,8 +76,9 @@ export function initialize_2fa(app, preprocessor?) {
     {
       method: Method.post,
       path: "user/2fa",
-      action: verify_2fa_token_handler()
+      action: verify_2fa_token_handler(),
+      validator: validators.verifyTwoFactor
     },
 
-  ], preprocessor)
+  ])
 }

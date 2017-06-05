@@ -143,7 +143,7 @@ export class UserService {
   }
 
   loadValidationHelpers(ajv) {
-    ajv.addSchema(require('./validation-helpers.json'))
+    ajv.addSchema(require('./validation/helpers.json'))
   }
 
   fieldExists(request: Request, fieldOptions: string[]) {
