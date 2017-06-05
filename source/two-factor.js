@@ -58,7 +58,7 @@ function verify_token_and_save(user_model) {
 }
 exports.verify_token_and_save = verify_token_and_save;
 function initializeTwoFactor(server) {
-    var validators = server.compileApiSchema(require('./validation/twoFactor.json'));
+    var validators = server.compileApiSchema(require('./validation/two-factor.json'));
     server.createPublicEndpoints([
         {
             method: vineyard_lawn_1.Method.get,

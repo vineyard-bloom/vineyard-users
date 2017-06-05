@@ -63,7 +63,7 @@ export function verify_token_and_save(user_model): Response_Generator {
 }
 
 export function initializeTwoFactor(server) {
-  const validators = server.compileApiSchema(require('./validation/twoFactor.json'))
+  const validators = server.compileApiSchema(require('./validation/two-factor.json'))
 
   server.createPublicEndpoints([
 
