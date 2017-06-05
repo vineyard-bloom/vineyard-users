@@ -1,7 +1,7 @@
 {
   "verifyTwoFactor": {
     "properties": {
-      "token": {"$ref": "vineyard-users#twoFactor"}
+      "twoFactor": {"$ref": "vineyard-users#twoFactor"}
     }
   }
 }
