@@ -44,22 +44,6 @@ export class UserService {
     }))
   }
 
-  // prepare_new_user(fields): Promise<User> {
-  //   if (!fields.username)
-  //     throw new Bad_Request("Missing username field")
-  //
-  //   if (!fields.password)
-  //     throw new Bad_Request("Missing password field")
-  //
-  //   return this.user_manager.User_Model.first_or_null({username: fields.username}).select(['id'])
-  //     .then(user => {
-  //       if (user)
-  //         throw new Bad_Request("That username is already taken.")
-  //
-  //       return this.user_manager.prepare_new_user(fields)
-  //     })
-  // }
-
   private check_login(request) {
     return this.user_manager.User_Model.first({username: request.data.username})
       .then(response => {
@@ -150,23 +134,16 @@ export class UserService {
       throw new lawn.Needs_Login()
   }
 
-  // create_user_with_2fa(request: lawn.Request): Promise<User> {
-  //   const fields = request.data
-  //   return this.prepare_new_user(fields)
-  //     .then(user => {
-  //       fields.two_factor_secret = two_factor.verify_2fa_request(request)
-  //       fields.two_factor_enabled = true
-  //       delete fields.token
-  //       return this.User_Model.create(fields)
-  //     })
-  // }
-
   addUserToRequest(request: Request): Promise<User> {
     if (request.user)
       return Promise.resolve(request.user)
 
     return this.user_manager.getUser(request.session.user)
       .then(user => request.user = sanitize(user))
+  }
+
+  loadValidationHelpers(ajv) {
+    ajv.addSchema(require('./validation-helpers.json'))
   }
 
   fieldExists(request: Request, fieldOptions: string[]) {
