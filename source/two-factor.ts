@@ -21,9 +21,6 @@ export function verify_2fa_token(secret, token): boolean {
 }
 
 export function verify_2fa_request(request: Request): string {
-  if (typeof request.data.token !== 'string')
-    throw new Bad_Request("Missing token argument.")
-
   const two_factor_secret = request.session.two_factor_secret
 
   if (!two_factor_secret)
@@ -32,7 +29,7 @@ export function verify_2fa_request(request: Request): string {
   if (speakeasy.totp.verify({
       secret: two_factor_secret,
       encoding: 'base32',
-      token: request.data.token
+      token: request.data.twoFactor
     })) {
 
     delete request.session.two_factor_secret

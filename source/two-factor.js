@@ -22,15 +22,13 @@ function verify_2fa_token(secret, token) {
 }
 exports.verify_2fa_token = verify_2fa_token;
 function verify_2fa_request(request) {
-    if (typeof request.data.token !== 'string')
-        throw new vineyard_lawn_1.Bad_Request("Missing token argument.");
     var two_factor_secret = request.session.two_factor_secret;
     if (!two_factor_secret)
         throw new vineyard_lawn_1.Bad_Request("2FA secret must be generated before verifying a token.");
     if (speakeasy.totp.verify({
         secret: two_factor_secret,
         encoding: 'base32',
-        token: request.data.token
+        token: request.data.twoFactor
     })) {
         delete request.session.two_factor_secret;
         return two_factor_secret;
