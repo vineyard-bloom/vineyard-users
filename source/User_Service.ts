@@ -70,7 +70,7 @@ export class UserService {
   create_login_2fa_handler(): lawn.Response_Generator {
     return request => this.check_login(request)
       .then(user => {
-        if (!two_factor.verify_2fa_token(user.two_factor_secret, request.data.token))
+        if (!two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
           throw new Bad_Request("Invalid 2FA token.")
 
         return sanitize(user)

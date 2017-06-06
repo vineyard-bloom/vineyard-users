@@ -66,7 +66,7 @@ var UserService = (function () {
         var _this = this;
         return function (request) { return _this.check_login(request)
             .then(function (user) {
-            if (!two_factor.verify_2fa_token(user.two_factor_secret, request.data.token))
+            if (!two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
                 throw new vineyard_lawn_1.Bad_Request("Invalid 2FA token.");
             return sanitize(user);
         }); };
