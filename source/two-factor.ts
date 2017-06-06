@@ -32,8 +32,6 @@ export function verify_2fa_request(request: Request): string {
       token: request.data.twoFactor
     })) {
 
-    delete request.session.two_factor_secret
-
     return two_factor_secret
   }
 

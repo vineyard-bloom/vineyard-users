@@ -21,6 +21,7 @@ export declare class UserService {
     create_all_endpoints(app: any): void;
     require_logged_in(request: lawn.Request): void;
     addUserToRequest(request: Request): Promise<User>;
+    loadValidationHelpers(ajv: any): void;
     fieldExists(request: Request, fieldOptions: string[]): Promise<{
         exists: boolean;
     }>;

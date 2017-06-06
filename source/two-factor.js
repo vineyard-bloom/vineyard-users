@@ -30,7 +30,6 @@ function verify_2fa_request(request) {
         encoding: 'base32',
         token: request.data.twoFactor
     })) {
-        delete request.session.two_factor_secret;
         return two_factor_secret;
     }
     throw new vineyard_lawn_1.Bad_Request("Verification failed.");
