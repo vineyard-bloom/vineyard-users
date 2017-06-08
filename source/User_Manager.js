@@ -40,10 +40,13 @@ var UserManager = (function () {
             updatedAt: 'modified',
         });
     }
+    UserManager.prototype.hashPassword = function (password) {
+        return bcrypt.hash(password, 10);
+    };
     UserManager.prototype.prepareNewUser = function (fields) {
         if (!fields.roles && this.User_Model.trellis.properties.roles)
             fields.roles = [];
-        return bcrypt.hash(fields.password, 10)
+        return this.hashPassword(fields.password)
             .then(function (salt_and_hash) {
             fields.password = salt_and_hash;
             return fields;

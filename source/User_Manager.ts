@@ -53,11 +53,15 @@ export class UserManager {
     )
   }
 
+  hashPassword(password) {
+    return bcrypt.hash(password, 10)
+  }
+
   prepareNewUser(fields) {
     if (!fields.roles && this.User_Model.trellis.properties.roles)
       fields.roles = [];
 
-    return bcrypt.hash(fields.password, 10)
+    return this.hashPassword(fields.password)
       .then(salt_and_hash => {
         fields.password = salt_and_hash;
         return fields
