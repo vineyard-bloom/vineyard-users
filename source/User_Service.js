@@ -42,7 +42,7 @@ var UserService = (function () {
             saveUninitialized: true
         }));
     }
-    UserService.prototype.check_login = function (request) {
+    UserService.prototype.checkLogin = function (request) {
         return this.user_manager.User_Model.first({ username: request.data.username })
             .then(function (response) {
             if (!response)
@@ -51,24 +51,26 @@ var UserService = (function () {
                 .then(function (success) {
                 if (!success)
                     throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.');
-                var user = response;
-                request.session.user = user.id;
-                return user;
+                return response;
             });
         });
     };
+    UserService.prototype.login = function (request, user) {
+        request.session.user = user.id;
+        return sanitize(user);
+    };
     UserService.prototype.create_login_handler = function () {
         var _this = this;
-        return function (request) { return _this.check_login(request)
-            .then(function (user) { return sanitize(user); }); };
+        return function (request) { return _this.checkLogin(request)
+            .then(function (user) { return _this.login(request, user); }); };
     };
     UserService.prototype.create_login_2fa_handler = function () {
         var _this = this;
-        return function (request) { return _this.check_login(request)
+        return function (request) { return _this.checkLogin(request)
             .then(function (user) {
-            if (!two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+            if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
                 throw new vineyard_lawn_1.Bad_Request("Invalid 2FA token.");
-            return sanitize(user);
+            return _this.login(request, user);
         }); };
     };
     UserService.prototype.createLogoutHandler = function () {

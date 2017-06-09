@@ -44,7 +44,7 @@ export class UserService {
     }))
   }
 
-  private check_login(request) {
+  private checkLogin(request) {
     return this.user_manager.User_Model.first({username: request.data.username})
       .then(response => {
         if (!response)
@@ -55,25 +55,28 @@ export class UserService {
             if (!success)
               throw new Bad_Request('Incorrect username or password.')
 
-            const user = response
-            request.session.user = user.id
-            return user
+            return response
           })
       })
   }
 
+  private login(request, user) {
+    request.session.user = user.id
+    return sanitize(user)
+  }
+
   create_login_handler(): lawn.Response_Generator {
-    return request => this.check_login(request)
-      .then(user => sanitize(user))
+    return request => this.checkLogin(request)
+      .then(user => this.login(request, user))
   }
 
   create_login_2fa_handler(): lawn.Response_Generator {
-    return request => this.check_login(request)
+    return request => this.checkLogin(request)
       .then(user => {
-        if (!two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+        if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
           throw new Bad_Request("Invalid 2FA token.")
 
-        return sanitize(user)
+        return this.login(request, user)
       })
   }
 
