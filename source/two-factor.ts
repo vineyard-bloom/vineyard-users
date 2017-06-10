@@ -7,7 +7,7 @@ export function get_2fa_token(): Response_Generator {
     request.session.two_factor_secret = secret.base32
     return Promise.resolve({
       secret: secret.base32,
-      secret_url: secret.otpauth_url
+      secret_url: secret.otpauth_url // deprecated
     })
   }
 }
@@ -55,6 +55,13 @@ export function verify_token_and_save(user_model): Response_Generator {
       two_factor_secret: request.session.two_factor_secret
     })
   }
+}
+
+export function getTwoFactorToken(secret: string) {
+  return speakeasy.totp({
+    secret: secret,
+    encoding: 'base32'
+  })
 }
 
 export function initializeTwoFactor(server) {

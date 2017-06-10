@@ -8,7 +8,7 @@ function get_2fa_token() {
         request.session.two_factor_secret = secret.base32;
         return Promise.resolve({
             secret: secret.base32,
-            secret_url: secret.otpauth_url
+            secret_url: secret.otpauth_url // deprecated
         });
     };
 }
@@ -54,6 +54,13 @@ function verify_token_and_save(user_model) {
     };
 }
 exports.verify_token_and_save = verify_token_and_save;
+function getTwoFactorToken(secret) {
+    return speakeasy.totp({
+        secret: secret,
+        encoding: 'base32'
+    });
+}
+exports.getTwoFactorToken = getTwoFactorToken;
 function initializeTwoFactor(server) {
     var validators = server.compileApiSchema(require('./validation/two-factor.json'));
     server.createPublicEndpoints([
