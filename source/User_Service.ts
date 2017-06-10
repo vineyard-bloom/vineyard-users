@@ -15,7 +15,6 @@ export interface Service_Settings {
 function sanitize(user: User_With_Password): User {
   const result = Object.assign({}, user)
   delete result.password
-  delete result.salt
   return result
 }
 

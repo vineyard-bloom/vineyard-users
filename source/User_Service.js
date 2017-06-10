@@ -18,7 +18,6 @@ var bcrypt = require('bcrypt');
 function sanitize(user) {
     var result = Object.assign({}, user);
     delete result.password;
-    delete result.salt;
     return result;
 }
 var UserService = (function () {
