@@ -3,7 +3,7 @@
   "definitions": {
     "usernamePattern": {
       "id": "#usernamePattern",
-      "pattern": "^[\\w\\-_]+$"
+      "pattern": "^[a-z0-9-_]+$"
     },
     "passwordPattern": {
       "id": "#passwordPattern",
