@@ -15,6 +15,7 @@ export declare class UserManager {
     user_model: any;
     private sessionCollection;
     private table_keys;
+    private tempPasswordCollection;
     constructor(db: Sequelize.Sequelize, settings: Settings);
     hashPassword(password: any): any;
     prepareNewUser(fields: any): any;

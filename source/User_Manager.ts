@@ -1,5 +1,6 @@
 import * as Sequelize from 'sequelize'
 import {promiseEach} from "./utility";
+import {Collection} from "vineyard-ground"
 
 const bcrypt = require('bcrypt');
 
@@ -14,12 +15,18 @@ export interface Settings {
   table_keys?
 }
 
+interface TempPassword {
+  user: string
+  password: string
+}
+
 export class UserManager {
   db: Sequelize.Sequelize;
   User_Model: any;
   user_model: any;
   private sessionCollection;
   private table_keys: Table_Keys;
+  private tempPasswordCollection:Collection<TempPassword>
 
   constructor(db: Sequelize.Sequelize, settings: Settings) {
     this.db = db;
@@ -60,6 +67,9 @@ export class UserManager {
   prepareNewUser(fields) {
     if (!fields.roles && this.User_Model.trellis.properties.roles)
       fields.roles = [];
+
+    if (typeof fields.email === 'string')
+      fields.email = fields.email.toLowerCase()
 
     return this.hashPassword(fields.password)
       .then(salt_and_hash => {

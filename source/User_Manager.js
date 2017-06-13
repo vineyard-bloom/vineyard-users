@@ -46,6 +46,8 @@ var UserManager = (function () {
     UserManager.prototype.prepareNewUser = function (fields) {
         if (!fields.roles && this.User_Model.trellis.properties.roles)
             fields.roles = [];
+        if (typeof fields.email === 'string')
+            fields.email = fields.email.toLowerCase();
         return this.hashPassword(fields.password)
             .then(function (salt_and_hash) {
             fields.password = salt_and_hash;
