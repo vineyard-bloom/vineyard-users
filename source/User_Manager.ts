@@ -96,6 +96,7 @@ export class UserManager {
     this.tempPasswordCollection = settings.model.TempPassword
   }
 
+
   hashPassword(password) {
     return bcrypt.hash(password, 10)
   }
@@ -157,7 +158,12 @@ export class UserManager {
   }
 
   private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
-
+    const expirationDate = new Date(tempPassword.created.getTime() + (6*60*60*1000))
+    if (Date.now() < expirationDate) {
+      return true
+    } else {
+      return false
+    }
   }
 
   matchTempPassword(user, password): Promise<boolean> {
@@ -187,8 +193,14 @@ export class UserManager {
   createTempPassword(user) {
     return this.tempPasswordCollection.firstOrNull({user: user.id})
       .then(tempPassword => {
-        if (tempPassword && tempPassword.created)
+        if(!tempPassword) {
+
+          this.tempPasswordCollection.create({
+            user: user,
+            password: this.hashPassword(Math.random().toString(36).slice(2))
           })
+        }
+      })
   }
 
   verifyEmail(user, code: string): Promise<boolean> {
@@ -230,7 +242,7 @@ export class UserManager {
   }
 
   getTempPasswordCollection() {
-    return this.tempPasswordCollection
+    //return this.tempPasswordCollection
   }
 }
 
