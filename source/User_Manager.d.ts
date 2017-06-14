@@ -8,6 +8,7 @@ export interface Table_Keys {
 export interface Settings {
     user_model: any;
     table_keys?: any;
+    model: any;
 }
 export declare class UserManager {
     db: Sequelize.Sequelize;
@@ -16,6 +17,7 @@ export declare class UserManager {
     private sessionCollection;
     private table_keys;
     private tempPasswordCollection;
+    private emailVerificationCollection;
     constructor(db: Sequelize.Sequelize, settings: Settings);
     hashPassword(password: any): any;
     prepareNewUser(fields: any): any;
@@ -26,9 +28,14 @@ export declare class UserManager {
     getSessionCollection(): any;
     getUserCollection(): any;
     private validateParameters(request);
+    private tempPasswordHasExpired(tempPassword);
+    matchTempPassword(user: any, password: any): Promise<boolean>;
+    createTempPassword(user: any): any;
+    verifyEmail(user: any, code: string): Promise<boolean>;
     private sanitizeRequest(request);
     fieldExists(key: string, value: any): Promise<boolean>;
     checkUniqueness(user: any, field?: string): Promise<void>;
+    getTempPasswordCollection(): any;
 }
 export declare class User_Manager extends UserManager {
     constructor(db: Sequelize.Sequelize, settings: Settings);

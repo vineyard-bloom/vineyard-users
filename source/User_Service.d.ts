@@ -10,6 +10,7 @@ export interface Service_Settings {
 export declare class UserService {
     user_manager: User_Manager;
     constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
+    private checkTempPassword(user, password);
     private checkLogin(request);
     private login(request, user);
     create_login_handler(): lawn.Response_Generator;

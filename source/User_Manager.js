@@ -39,6 +39,31 @@ var UserManager = (function () {
             createdAt: 'created',
             updatedAt: 'modified',
         });
+        settings.model.ground.addDefinitions({
+            "TempPassword": {
+                "primary": "user",
+                "properties": {
+                    "user": {
+                        "type": "guid"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                }
+            },
+            "EmailVerification": {
+                "primary": "user",
+                "properties": {
+                    "user": {
+                        "type": "guid"
+                    },
+                    "code": {
+                        "type": "string"
+                    }
+                }
+            }
+        });
+        this.tempPasswordCollection = settings.model.TempPassword;
     }
     UserManager.prototype.hashPassword = function (password) {
         return bcrypt.hash(password, 10);
@@ -92,6 +117,50 @@ var UserManager = (function () {
             }
         };
     };
+    UserManager.prototype.tempPasswordHasExpired = function (tempPassword) {
+    };
+    UserManager.prototype.matchTempPassword = function (user, password) {
+        var _this = this;
+        return this.tempPasswordCollection.firstOrNull({ user: user.id })
+            .then(function (tempPassword) {
+            if (!tempPassword)
+                return false;
+            if (_this.tempPasswordHasExpired(tempPassword))
+                return _this.tempPasswordCollection.remove(tempPassword)
+                    .then(function () { return false; });
+            return bcrypt.compare(tempPassword.password, user.password)
+                .then(function (success) {
+                if (!success)
+                    return false;
+                return _this.getUserCollection().update(user, {
+                    password: tempPassword.password
+                })
+                    .then(function () { return _this.tempPasswordCollection.remove(tempPassword); })
+                    .then(function () { return true; });
+            });
+        });
+    };
+    UserManager.prototype.createTempPassword = function (user) {
+        return this.tempPasswordCollection.firstOrNull({ user: user.id })
+            .then(function (tempPassword) {
+            if (tempPassword && tempPassword.created)
+                ;
+        });
+    };
+    UserManager.prototype.verifyEmail = function (user, code) {
+        var _this = this;
+        return this.emailVerificationCollection.firstOrNull({
+            user: user
+        })
+            .then(function (result) {
+            if (!result || result.code != code)
+                return false;
+            return _this.user_model.update(user, {
+                emailVerified: true
+            })
+                .then(function () { return true; });
+        });
+    };
     UserManager.prototype.sanitizeRequest = function (request) {
         var check = this.validateParameters(request);
         if (check.valid !== true) {
@@ -112,6 +181,9 @@ var UserManager = (function () {
                 throw new Error("User validation error: " + field + " must be unique");
             }
         });
+    };
+    UserManager.prototype.getTempPasswordCollection = function () {
+        return this.tempPasswordCollection;
     };
     return UserManager;
 }());

@@ -43,19 +43,27 @@ export class UserService {
     }))
   }
 
-  private checkLogin(request) {
-    return this.user_manager.User_Model.first({username: request.data.username})
-      .then(response => {
-        if (!response)
+  private checkTempPassword(user, password) {
+    return this.user_manager.matchTempPassword(user, password)
+      .then(success =>{
+        if (!success)
           throw new Bad_Request('Incorrect username or password.')
 
-        return bcrypt.compare(request.data.password, response.password)
-          .then(success => {
-            if (!success)
-              throw new Bad_Request('Incorrect username or password.')
+        return user
+      })
+  }
 
-            return response
-          })
+  private checkLogin(request) {
+    return this.user_manager.User_Model.first({username: request.data.username})
+      .then(user => {
+        if (!user)
+          throw new Bad_Request('Incorrect username or password.')
+
+        return bcrypt.compare(request.data.password, user.password)
+          .then(success => success
+            ? user
+            : this.checkTempPassword(user, request.data.password)
+          )
       })
   }
 

@@ -1,6 +1,7 @@
 import * as Sequelize from 'sequelize'
 import {promiseEach} from "./utility";
 import {Collection} from "vineyard-ground"
+import {Modeler} from "../../vineyard-ground/source/modeler";
 
 const bcrypt = require('bcrypt');
 
@@ -13,20 +14,28 @@ export interface Table_Keys {
 export interface Settings {
   user_model
   table_keys?
+  model
 }
 
 interface TempPassword {
   user: string
   password: string
+  created
+}
+
+interface EmailVerification {
+  email: string
+  code: string
 }
 
 export class UserManager {
-  db: Sequelize.Sequelize;
-  User_Model: any;
-  user_model: any;
+  db: Sequelize.Sequelize
+  User_Model: any
+  user_model: any
   private sessionCollection;
   private table_keys: Table_Keys;
-  private tempPasswordCollection:Collection<TempPassword>
+  private tempPasswordCollection: Collection<TempPassword>
+  private emailVerificationCollection: Collection<EmailVerification>
 
   constructor(db: Sequelize.Sequelize, settings: Settings) {
     this.db = db;
@@ -58,6 +67,33 @@ export class UserManager {
         updatedAt: 'modified',
       }
     )
+
+    settings.model.ground.addDefinitions({
+      "TempPassword": {
+        "primary": "user",
+        "properties": {
+          "user": {
+            "type": "guid"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "EmailVerification": {
+        "primary": "user",
+        "properties": {
+          "user": {
+            "type": "guid"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    })
+
+    this.tempPasswordCollection = settings.model.TempPassword
   }
 
   hashPassword(password) {
@@ -120,6 +156,56 @@ export class UserManager {
     }
   }
 
+  private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
+
+  }
+
+  matchTempPassword(user, password): Promise<boolean> {
+    return this.tempPasswordCollection.firstOrNull({user: user.id})
+      .then(tempPassword => {
+        if (!tempPassword)
+          return false
+
+        if (this.tempPasswordHasExpired(tempPassword))
+          return this.tempPasswordCollection.remove(tempPassword)
+            .then(() => false)
+
+        return bcrypt.compare(tempPassword.password, user.password)
+          .then(success => {
+            if (!success)
+              return false
+
+            return this.getUserCollection().update(user, {
+              password: tempPassword.password
+            })
+              .then(() => this.tempPasswordCollection.remove(tempPassword))
+              .then(() => true)
+          })
+      })
+  }
+
+  createTempPassword(user) {
+    return this.tempPasswordCollection.firstOrNull({user: user.id})
+      .then(tempPassword => {
+        if (tempPassword && tempPassword.created)
+          })
+  }
+
+  verifyEmail(user, code: string): Promise<boolean> {
+    return this.emailVerificationCollection.firstOrNull({
+      user: user
+    })
+      .then(result => {
+        if (!result || result.code != code)
+          return false
+
+        return this.user_model.update(user, {
+          emailVerified: true
+        })
+          .then(() => true)
+      })
+  }
+
   private sanitizeRequest(request) {
     const check = this.validateParameters(request);
     if (check.valid !== true) {
@@ -127,7 +213,7 @@ export class UserManager {
     }
   }
 
-  fieldExists(key:string, value:any): Promise<boolean> {
+  fieldExists(key: string, value: any): Promise<boolean> {
     const filter = {}
     filter[key] = value
     return this.User_Model.first_or_null(filter)
@@ -141,6 +227,10 @@ export class UserManager {
           throw new Error(`User validation error: ${field} must be unique`)
         }
       })
+  }
+
+  getTempPasswordCollection() {
+    return this.tempPasswordCollection
   }
 }
 

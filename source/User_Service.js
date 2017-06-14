@@ -41,17 +41,24 @@ var UserService = (function () {
             saveUninitialized: true
         }));
     }
-    UserService.prototype.checkLogin = function (request) {
-        return this.user_manager.User_Model.first({ username: request.data.username })
-            .then(function (response) {
-            if (!response)
+    UserService.prototype.checkTempPassword = function (user, password) {
+        return this.user_manager.matchTempPassword(user, password)
+            .then(function (success) {
+            if (!success)
                 throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.');
-            return bcrypt.compare(request.data.password, response.password)
-                .then(function (success) {
-                if (!success)
-                    throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.');
-                return response;
-            });
+            return user;
+        });
+    };
+    UserService.prototype.checkLogin = function (request) {
+        var _this = this;
+        return this.user_manager.User_Model.first({ username: request.data.username })
+            .then(function (user) {
+            if (!user)
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.');
+            return bcrypt.compare(request.data.password, user.password)
+                .then(function (success) { return success
+                ? user
+                : _this.checkTempPassword(user, request.data.password); });
         });
     };
     UserService.prototype.login = function (request, user) {
