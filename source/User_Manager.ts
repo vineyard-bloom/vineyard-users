@@ -191,16 +191,19 @@ export class UserManager {
   }
 
   createTempPassword(user) {
-    return this.tempPasswordCollection.firstOrNull({user: user.id})
+    this.getTempPassword(user)
       .then(tempPassword => {
         if(!tempPassword) {
-
           this.tempPasswordCollection.create({
             user: user,
             password: this.hashPassword(Math.random().toString(36).slice(2))
           })
         }
       })
+  }
+
+  getTempPassword(user) {
+    return this.tempPasswordCollection.firstOrNull({user: user.id})
   }
 
   verifyEmail(user, code: string): Promise<boolean> {
