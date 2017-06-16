@@ -7,7 +7,7 @@
     },
     "passwordPattern": {
       "id": "#passwordPattern",
-      "pattern": "^[\\w\\-_@\\.`~!#$%^&*()+=?<>.,[\\]]+$"
+      "pattern": "^[\\w\\-_@\\.`~!#$%^&*()+=?<>,[\\]]+$"
     },
     "username": {
       "id": "#username",
