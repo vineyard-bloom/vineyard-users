@@ -30,7 +30,7 @@ export declare class UserManager {
     private validateParameters(request);
     private tempPasswordHasExpired(tempPassword);
     matchTempPassword(user: any, password: any): Promise<boolean>;
-    createTempPassword(user: any): any;
+    createTempPassword(user: any): void;
     verifyEmail(user: any, code: string): Promise<boolean>;
     private sanitizeRequest(request);
     fieldExists(key: string, value: any): Promise<boolean>;

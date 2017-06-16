@@ -157,7 +157,7 @@ export class UserManager {
   }
 
   private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
-
+    return true
   }
 
   matchTempPassword(user, password): Promise<boolean> {
@@ -185,10 +185,10 @@ export class UserManager {
   }
 
   createTempPassword(user) {
-    return this.tempPasswordCollection.firstOrNull({user: user.id})
-      .then(tempPassword => {
-        if (tempPassword && tempPassword.created)
-          })
+    // return this.tempPasswordCollection.firstOrNull({user: user.id})
+    //   .then(tempPassword => {
+    //     if (tempPassword && tempPassword.created)
+    //       })
   }
 
   verifyEmail(user, code: string): Promise<boolean> {

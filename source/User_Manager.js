@@ -118,6 +118,7 @@ var UserManager = (function () {
         };
     };
     UserManager.prototype.tempPasswordHasExpired = function (tempPassword) {
+        return true;
     };
     UserManager.prototype.matchTempPassword = function (user, password) {
         var _this = this;
@@ -141,11 +142,10 @@ var UserManager = (function () {
         });
     };
     UserManager.prototype.createTempPassword = function (user) {
-        return this.tempPasswordCollection.firstOrNull({ user: user.id })
-            .then(function (tempPassword) {
-            if (tempPassword && tempPassword.created)
-                ;
-        });
+        // return this.tempPasswordCollection.firstOrNull({user: user.id})
+        //   .then(tempPassword => {
+        //     if (tempPassword && tempPassword.created)
+        //       })
     };
     UserManager.prototype.verifyEmail = function (user, code) {
         var _this = this;
