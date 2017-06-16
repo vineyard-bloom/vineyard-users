@@ -233,8 +233,8 @@ export class UserManager {
       })
   }
 
-  createEmailCode(user) {
-    this.getEmailCode(user)
+  createEmailCode(user):Promise<any> {
+    return this.getEmailCode(user)
       .then(emailCode => {
         if(!emailCode) {
           const newEmlCode = Math.random().toString(36).slice(2)
