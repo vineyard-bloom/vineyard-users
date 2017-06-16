@@ -30,12 +30,12 @@ export declare class UserManager {
     private validateParameters(request);
     private tempPasswordHasExpired(tempPassword);
     matchTempPassword(user: any, password: any): Promise<boolean>;
-    createTempPassword(user: any): any;
+    createTempPassword(user: any): Promise<any>;
     verifyEmail(user: any, code: string): Promise<boolean>;
     private sanitizeRequest(request);
     fieldExists(key: string, value: any): Promise<boolean>;
     checkUniqueness(user: any, field?: string): Promise<void>;
-    getTempPasswordCollection(): any;
+    getTempPasswordCollection(): void;
 }
 export declare class User_Manager extends UserManager {
     constructor(db: Sequelize.Sequelize, settings: Settings);

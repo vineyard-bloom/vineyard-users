@@ -118,6 +118,13 @@ var UserManager = (function () {
         };
     };
     UserManager.prototype.tempPasswordHasExpired = function (tempPassword) {
+        var expirationDate = new Date(tempPassword.created.getHours());
+        if (tempPassword.created < new Date()) {
+            return false;
+        }
+        else {
+            return true;
+        }
     };
     UserManager.prototype.matchTempPassword = function (user, password) {
         var _this = this;
@@ -143,8 +150,7 @@ var UserManager = (function () {
     UserManager.prototype.createTempPassword = function (user) {
         return this.tempPasswordCollection.firstOrNull({ user: user.id })
             .then(function (tempPassword) {
-            if (tempPassword && tempPassword.created)
-                ;
+            if (tempPassword && tempPassword.created) { }
         });
     };
     UserManager.prototype.verifyEmail = function (user, code) {
@@ -183,7 +189,7 @@ var UserManager = (function () {
         });
     };
     UserManager.prototype.getTempPasswordCollection = function () {
-        return this.tempPasswordCollection;
+        //return this.tempPasswordCollection
     };
     return UserManager;
 }());
