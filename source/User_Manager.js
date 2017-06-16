@@ -39,31 +39,33 @@ var UserManager = (function () {
             createdAt: 'created',
             updatedAt: 'modified',
         });
-        settings.model.ground.addDefinitions({
-            "TempPassword": {
-                "primary": "user",
-                "properties": {
-                    "user": {
-                        "type": "guid"
-                    },
-                    "password": {
-                        "type": "string"
+        if (settings.model) {
+            settings.model.ground.addDefinitions({
+                "TempPassword": {
+                    "primary": "user",
+                    "properties": {
+                        "user": {
+                            "type": "guid"
+                        },
+                        "password": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "EmailVerification": {
+                    "primary": "user",
+                    "properties": {
+                        "user": {
+                            "type": "guid"
+                        },
+                        "code": {
+                            "type": "string"
+                        }
                     }
                 }
-            },
-            "EmailVerification": {
-                "primary": "user",
-                "properties": {
-                    "user": {
-                        "type": "guid"
-                    },
-                    "code": {
-                        "type": "string"
-                    }
-                }
-            }
-        });
-        this.tempPasswordCollection = settings.model.TempPassword;
+            });
+            this.tempPasswordCollection = settings.model.TempPassword;
+        }
     }
     UserManager.prototype.hashPassword = function (password) {
         return bcrypt.hash(password, 10);

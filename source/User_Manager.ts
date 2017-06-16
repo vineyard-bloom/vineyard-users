@@ -68,32 +68,34 @@ export class UserManager {
       }
     )
 
-    settings.model.ground.addDefinitions({
-      "TempPassword": {
-        "primary": "user",
-        "properties": {
-          "user": {
-            "type": "guid"
-          },
-          "password": {
-            "type": "string"
+    if (settings.model) {
+      settings.model.ground.addDefinitions({
+        "TempPassword": {
+          "primary": "user",
+          "properties": {
+            "user": {
+              "type": "guid"
+            },
+            "password": {
+              "type": "string"
+            }
+          }
+        },
+        "EmailVerification": {
+          "primary": "user",
+          "properties": {
+            "user": {
+              "type": "guid"
+            },
+            "code": {
+              "type": "string"
+            }
           }
         }
-      },
-      "EmailVerification": {
-        "primary": "user",
-        "properties": {
-          "user": {
-            "type": "guid"
-          },
-          "code": {
-            "type": "string"
-          }
-        }
-      }
-    })
+      })
 
-    this.tempPasswordCollection = settings.model.TempPassword
+      this.tempPasswordCollection = settings.model.TempPassword
+    }
   }
 
   hashPassword(password) {
