@@ -215,12 +215,12 @@ export class UserManager {
       })
   }
 
-  createTempPassword(user) {
-    this.getTempPassword(user)
+  createTempPassword(user):Promise<any> {
+    return this.getTempPassword(user)
       .then(tempPassword => {
         if(!tempPassword) {
           const newTmpPass = Math.random().toString(36).slice(2)
-          this.tempPasswordCollection.create({
+          return this.tempPasswordCollection.create({
             user: user,
             password: this.hashPassword(newTmpPass)
           })
