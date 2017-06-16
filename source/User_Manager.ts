@@ -166,6 +166,15 @@ export class UserManager {
     }
   }
 
+  private emailCodeHasExpired(emailCode): boolean {
+    const expirationDate = new Date(emailCode.created.getTime() + (6*60*60*1000))
+    if (Date.now() < expirationDate) {
+      return true
+    } else {
+      return false
+    }
+  }
+
   matchTempPassword(user, password): Promise<boolean> {
     return this.tempPasswordCollection.firstOrNull({user: user.id})
       .then(tempPassword => {
@@ -190,35 +199,64 @@ export class UserManager {
       })
   }
 
-  createTempPassword(user) {
-    this.getTempPassword(user)
-      .then(tempPassword => {
-        if(!tempPassword) {
-          this.tempPasswordCollection.create({
-            user: user,
-            password: this.hashPassword(Math.random().toString(36).slice(2))
-          })
-        }
-      })
-  }
-
-  getTempPassword(user) {
-    return this.tempPasswordCollection.firstOrNull({user: user.id})
-  }
-
   verifyEmail(user, code: string): Promise<boolean> {
     return this.emailVerificationCollection.firstOrNull({
       user: user
     })
-      .then(result => {
-        if (!result || result.code != code)
+      .then(emailCode => {
+        if (!emailCode || emailCode.code != code)
           return false
 
         return this.user_model.update(user, {
           emailVerified: true
         })
+          .then(() => this.emailVerificationCollection.remove(emailCode))
           .then(() => true)
       })
+  }
+
+  createTempPassword(user) {
+    this.getTempPassword(user)
+      .then(tempPassword => {
+        if(!tempPassword) {
+          const newTmpPass = Math.random().toString(36).slice(2)
+          this.tempPasswordCollection.create({
+            user: user,
+            password: this.hashPassword(newTmpPass)
+          })
+            .then(() => {
+              return newTmpPass
+            })
+        } else {
+          return tempPassword
+        }
+      })
+  }
+
+  createEmailCode(user) {
+    this.getEmailCode(user)
+      .then(emailCode => {
+        if(!emailCode) {
+          const newEmlCode = Math.random().toString(36).slice(2)
+          return this.emailVerificationCollection.create({
+            user: user,
+            code: newEmlCode
+          })
+            .then(() => {
+              return newEmlCode
+            })
+        } else {
+          return emailCode
+        }
+      })
+  }
+
+  getEmailCode(user) {
+    return this.emailVerificationCollection.firstOrNull({user: user.id})
+  }
+
+  getTempPassword(user) {
+    return this.tempPasswordCollection.firstOrNull({user: user.id})
   }
 
   private sanitizeRequest(request) {
@@ -242,10 +280,6 @@ export class UserManager {
           throw new Error(`User validation error: ${field} must be unique`)
         }
       })
-  }
-
-  getTempPasswordCollection() {
-    //return this.tempPasswordCollection
   }
 }
 
