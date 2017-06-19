@@ -21,7 +21,7 @@ export function verify_2fa_token(secret, token): boolean {
 }
 
 export function verify_2fa_request(request: Request): string {
-  const two_factor_secret = request.session.two_factor_secret
+  const two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret
 
   if (!two_factor_secret)
     throw new Bad_Request("2FA secret must be generated before verifying a token.")
@@ -29,7 +29,7 @@ export function verify_2fa_request(request: Request): string {
   if (speakeasy.totp.verify({
       secret: two_factor_secret,
       encoding: 'base32',
-      token: request.data.twoFactor
+      token: request.data.twoFactorToken || request.data.twoFactor
     })) {
 
     return two_factor_secret

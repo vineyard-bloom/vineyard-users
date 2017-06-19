@@ -29,12 +29,19 @@
       "format": "email",
       "maxLength": 128
     },
-    "twoFactor": {
-      "id": "#twoFactor",
+    "twoFactorToken": {
+      "id": "#twoFactorToken",
       "type": "string",
       "pattern": "^[\\d]+$",
       "minLength": 6,
       "maxLength": 8
+    },
+    "twoFactorSecret": {
+      "id": "#twoFactorSecret",
+      "type": "string",
+      "pattern": "^[\\w]+$",
+      "minLength": 6,
+      "maxLength": 128
     },
     "login": {
       "id": "#login",
