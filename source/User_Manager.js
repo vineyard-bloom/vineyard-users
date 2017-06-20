@@ -124,6 +124,8 @@ var UserManager = (function () {
     };
     UserManager.prototype.matchTempPassword = function (user, password) {
         var _this = this;
+        if (!this.tempPasswordCollection)
+            return Promise.resolve(false);
         return this.tempPasswordCollection.firstOrNull({ user: user.id })
             .then(function (tempPassword) {
             if (!tempPassword)

@@ -163,6 +163,9 @@ export class UserManager {
   }
 
   matchTempPassword(user, password): Promise<boolean> {
+    if (!this.tempPasswordCollection)
+      return Promise.resolve(false)
+
     return this.tempPasswordCollection.firstOrNull({user: user.id})
       .then(tempPassword => {
         if (!tempPassword)
