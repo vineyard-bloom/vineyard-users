@@ -120,7 +120,12 @@ var UserManager = (function () {
         };
     };
     UserManager.prototype.tempPasswordHasExpired = function (tempPassword) {
-        return true;
+        var expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000));
+        return new Date() < expirationDate;
+    };
+    UserManager.prototype.emailCodeHasExpired = function (emailCode) {
+        var expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000));
+        return new Date() < expirationDate;
     };
     UserManager.prototype.matchTempPassword = function (user, password) {
         var _this = this;
@@ -145,25 +150,64 @@ var UserManager = (function () {
             });
         });
     };
-    UserManager.prototype.createTempPassword = function (user) {
-        // return this.tempPasswordCollection.firstOrNull({user: user.id})
-        //   .then(tempPassword => {
-        //     if (tempPassword && tempPassword.created)
-        //       })
-    };
     UserManager.prototype.verifyEmail = function (user, code) {
         var _this = this;
         return this.emailVerificationCollection.firstOrNull({
             user: user
         })
-            .then(function (result) {
-            if (!result || result.code != code)
+            .then(function (emailCode) {
+            if (!emailCode || emailCode.code != code)
                 return false;
             return _this.user_model.update(user, {
                 emailVerified: true
             })
+                .then(function () { return _this.emailVerificationCollection.remove(emailCode); })
                 .then(function () { return true; });
         });
+    };
+    UserManager.prototype.createTempPassword = function (user) {
+        var _this = this;
+        return this.getTempPassword(user)
+            .then(function (tempPassword) {
+            if (!tempPassword) {
+                var newTmpPass_1 = Math.random().toString(36).slice(2);
+                return _this.tempPasswordCollection.create({
+                    user: user,
+                    password: _this.hashPassword(newTmpPass_1)
+                })
+                    .then(function () {
+                    return newTmpPass_1;
+                });
+            }
+            else {
+                return tempPassword;
+            }
+        });
+    };
+    UserManager.prototype.createEmailCode = function (user) {
+        var _this = this;
+        return this.getEmailCode(user)
+            .then(function (emailCode) {
+            if (!emailCode) {
+                var newEmlCode_1 = Math.random().toString(36).slice(2);
+                return _this.emailVerificationCollection.create({
+                    user: user,
+                    code: newEmlCode_1
+                })
+                    .then(function () {
+                    return newEmlCode_1;
+                });
+            }
+            else {
+                return emailCode;
+            }
+        });
+    };
+    UserManager.prototype.getEmailCode = function (user) {
+        return this.emailVerificationCollection.firstOrNull({ user: user.id });
+    };
+    UserManager.prototype.getTempPassword = function (user) {
+        return this.tempPasswordCollection.firstOrNull({ user: user.id });
     };
     UserManager.prototype.sanitizeRequest = function (request) {
         var check = this.validateParameters(request);

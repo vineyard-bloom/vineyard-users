@@ -160,20 +160,12 @@ export class UserManager {
 
   private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
     const expirationDate = new Date(tempPassword.created.getTime() + (6*60*60*1000))
-    if (Date.now() < expirationDate) {
-      return true
-    } else {
-      return false
-    }
+    return  new Date() < expirationDate
   }
 
   private emailCodeHasExpired(emailCode): boolean {
     const expirationDate = new Date(emailCode.created.getTime() + (6*60*60*1000))
-    if (Date.now() < expirationDate) {
-      return true
-    } else {
-      return false
-    }
+    return new Date() < expirationDate
   }
 
   matchTempPassword(user, password): Promise<boolean> {
