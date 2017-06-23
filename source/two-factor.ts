@@ -1,6 +1,8 @@
 import {Response_Generator, Bad_Request, create_endpoints, Method, Request} from "vineyard-lawn";
 const speakeasy = require("speakeasy")
 
+const window = 2
+
 export function get_2fa_token(): Response_Generator {
   return request => {
     const secret = speakeasy.generateSecret()
@@ -16,7 +18,8 @@ export function verify_2fa_token(secret, token): boolean {
   return speakeasy.totp.verify({
     secret: secret,
     encoding: 'base32',
-    token: token
+    token: token,
+    windows: window
   })
 }
 
@@ -29,7 +32,8 @@ export function verify_2fa_request(request: Request): string {
   if (speakeasy.totp.verify({
       secret: two_factor_secret,
       encoding: 'base32',
-      token: request.data.twoFactorToken || request.data.twoFactor
+      token: request.data.twoFactorToken || request.data.twoFactor,
+      window: window
     })) {
 
     return two_factor_secret

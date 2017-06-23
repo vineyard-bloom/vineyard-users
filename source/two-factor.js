@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var vineyard_lawn_1 = require("vineyard-lawn");
 var speakeasy = require("speakeasy");
+var window = 2;
 function get_2fa_token() {
     return function (request) {
         var secret = speakeasy.generateSecret();
@@ -17,7 +18,8 @@ function verify_2fa_token(secret, token) {
     return speakeasy.totp.verify({
         secret: secret,
         encoding: 'base32',
-        token: token
+        token: token,
+        windows: window
     });
 }
 exports.verify_2fa_token = verify_2fa_token;
@@ -28,7 +30,8 @@ function verify_2fa_request(request) {
     if (speakeasy.totp.verify({
         secret: two_factor_secret,
         encoding: 'base32',
-        token: request.data.twoFactorToken || request.data.twoFactor
+        token: request.data.twoFactorToken || request.data.twoFactor,
+        window: window
     })) {
         return two_factor_secret;
     }

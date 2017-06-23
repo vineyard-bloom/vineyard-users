@@ -45,7 +45,7 @@ export class UserService {
 
   private checkTempPassword(user, password) {
     return this.user_manager.matchTempPassword(user, password)
-      .then(success =>{
+      .then(success => {
         if (!success)
           throw new Bad_Request('Incorrect username or password.')
 
