@@ -19,7 +19,7 @@ function verify_2fa_token(secret, token) {
         secret: secret,
         encoding: 'base32',
         token: token,
-        windows: window
+        window: window
     });
 }
 exports.verify_2fa_token = verify_2fa_token;
@@ -27,12 +27,7 @@ function verify_2fa_request(request) {
     var two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret;
     if (!two_factor_secret)
         throw new vineyard_lawn_1.Bad_Request("2FA secret must be generated before verifying a token.");
-    if (speakeasy.totp.verify({
-        secret: two_factor_secret,
-        encoding: 'base32',
-        token: request.data.twoFactorToken || request.data.twoFactor,
-        window: window
-    })) {
+    if (verify_2fa_token(two_factor_secret, request.data.twoFactorToken || request.data.twoFactor)) {
         return two_factor_secret;
     }
     throw new vineyard_lawn_1.Bad_Request("Verification failed.");
