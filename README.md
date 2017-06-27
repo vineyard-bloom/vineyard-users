@@ -9,6 +9,8 @@ Vineyard Users is a library that adds common user features to the Vineyard ecosy
 * User creation, logging in, and logging out.
 * Two factor authentication.
 * User roles.
+* Password reset
+* Email verification
  
 ## Structure
 

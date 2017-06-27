@@ -170,17 +170,18 @@ var UserManager = (function () {
         return this.getTempPassword(user)
             .then(function (tempPassword) {
             if (!tempPassword) {
-                var newTmpPass_1 = Math.random().toString(36).slice(2);
-                return _this.tempPasswordCollection.create({
+                var passwordString_1 = Math.random().toString(36).slice(2);
+                return _this.hashPassword(passwordString_1)
+                    .then(function (hashedPassword) { return _this.tempPasswordCollection.create({
                     user: user,
-                    password: _this.hashPassword(newTmpPass_1)
-                })
+                    password: hashedPassword
+                }); })
                     .then(function () {
-                    return newTmpPass_1;
+                    return passwordString_1;
                 });
             }
             else {
-                return tempPassword;
+                return null;
             }
         });
     };

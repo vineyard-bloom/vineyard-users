@@ -98,7 +98,7 @@ export class UserManager {
     }
   }
 
-  hashPassword(password) {
+  hashPassword(password): Promise<string> {
     return bcrypt.hash(password, 10)
   }
 
@@ -159,12 +159,12 @@ export class UserManager {
   }
 
   private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
-    const expirationDate = new Date(tempPassword.created.getTime() + (6*60*60*1000))
-    return  new Date() < expirationDate
+    const expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000))
+    return new Date() < expirationDate
   }
 
   private emailCodeHasExpired(emailCode): boolean {
-    const expirationDate = new Date(emailCode.created.getTime() + (6*60*60*1000))
+    const expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000))
     return new Date() < expirationDate
   }
 
@@ -211,28 +211,30 @@ export class UserManager {
       })
   }
 
-  createTempPassword(user):Promise<any> {
+  createTempPassword(user): Promise<any> {
     return this.getTempPassword(user)
       .then(tempPassword => {
-        if(!tempPassword) {
-          const newTmpPass = Math.random().toString(36).slice(2)
-          return this.tempPasswordCollection.create({
-            user: user,
-            password: this.hashPassword(newTmpPass)
-          })
+        if (!tempPassword) {
+          const passwordString = Math.random().toString(36).slice(2)
+          return this.hashPassword(passwordString)
+            .then(hashedPassword => this.tempPasswordCollection.create({
+                user: user,
+                password: hashedPassword
+              })
+            )
             .then(() => {
-              return newTmpPass
+              return passwordString
             })
         } else {
-          return tempPassword
+          return null
         }
       })
   }
 
-  createEmailCode(user):Promise<any> {
+  createEmailCode(user): Promise<any> {
     return this.getEmailCode(user)
       .then(emailCode => {
-        if(!emailCode) {
+        if (!emailCode) {
           const newEmlCode = Math.random().toString(36).slice(2)
           return this.emailVerificationCollection.create({
             user: user,
