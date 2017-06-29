@@ -211,23 +211,29 @@ export class UserManager {
       })
   }
 
-  createTempPassword(user): Promise<any> {
-    return this.getTempPassword(user)
-      .then(tempPassword => {
-        if (!tempPassword) {
-          const passwordString = Math.random().toString(36).slice(2)
-          return this.hashPassword(passwordString)
-            .then(hashedPassword => this.tempPasswordCollection.create({
-                user: user,
-                password: hashedPassword
-              })
-            )
-            .then(() => {
-              return passwordString
-            })
-        } else {
-          return null
-        }
+  createTempPassword(username: string): Promise<any> {
+    return this.user_model.firstOrNull({username: username})
+      .then(user => {
+        if (!user)
+          throw new Error("Invalid username: " + username)
+
+        return this.getTempPassword(user)
+          .then(tempPassword => {
+            if (!tempPassword) {
+              const passwordString = Math.random().toString(36).slice(2)
+              return this.hashPassword(passwordString)
+                .then(hashedPassword => this.tempPasswordCollection.create({
+                    user: user,
+                    password: hashedPassword
+                  })
+                )
+                .then(() => {
+                  return passwordString
+                })
+            } else {
+              return null
+            }
+          })
       })
   }
 
