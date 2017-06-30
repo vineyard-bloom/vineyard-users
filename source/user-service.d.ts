@@ -12,9 +12,11 @@ export declare class UserService {
     constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
     private checkTempPassword(user, password);
     private checkLogin(request);
-    private login(request, user);
+    private finishLogin(request, user);
+    login(request: Request): any;
     create_login_handler(): lawn.Response_Generator;
     create_login_2fa_handler(): lawn.Response_Generator;
+    logout(request: Request): Promise<{}>;
     createLogoutHandler(): lawn.Response_Generator;
     create_logout_handler(): lawn.Response_Generator;
     create_get_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
@@ -24,9 +26,7 @@ export declare class UserService {
     require_logged_in(request: lawn.Request): void;
     addUserToRequest(request: Request): Promise<User>;
     loadValidationHelpers(ajv: any): void;
-    fieldExists(request: Request, fieldOptions: string[]): Promise<{
-        exists: boolean;
-    }>;
+    fieldExists(request: Request, fieldOptions: string[]): any;
 }
 export declare class User_Service extends UserService {
     constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);

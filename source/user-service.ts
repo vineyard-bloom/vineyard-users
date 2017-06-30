@@ -25,6 +25,9 @@ export class UserService {
     this.user_manager = user_manager
     const SequelizeStore = require('connect-session-sequelize')(session.Store)
 
+    if (!settings.secret)
+      throw new Error("UserService settings.secret cannot be empty.")
+
     app.use(session({
       secret: settings.secret,
       store: new SequelizeStore({
@@ -67,14 +70,18 @@ export class UserService {
       })
   }
 
-  private login(request, user) {
+  private finishLogin(request, user) {
     request.session.user = user.id
     return sanitize(user)
   }
 
+  login(request: Request) {
+    return this.checkLogin(request)
+      .then(user => this.finishLogin(request, user))
+  }
+
   create_login_handler(): lawn.Response_Generator {
-    return request => this.checkLogin(request)
-      .then(user => this.login(request, user))
+    return request => this.login(request)
   }
 
   create_login_2fa_handler(): lawn.Response_Generator {
@@ -83,18 +90,20 @@ export class UserService {
         if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
           throw new Bad_Request("Invalid 2FA token.")
 
-        return this.login(request, user)
+        return this.finishLogin(request, user)
       })
   }
 
-  createLogoutHandler(): lawn.Response_Generator {
-    return request => {
-      if (!request.session.user)
-        throw new Bad_Request('Already logged out.')
+  logout(request: Request) {
+    if (!request.session.user)
+      throw new Bad_Request('Already logged out.')
 
-      request.session.user = null
-      return Promise.resolve({})
-    }
+    request.session.user = null
+    return Promise.resolve({})
+  }
+
+  createLogoutHandler(): lawn.Response_Generator {
+    return request => this.logout(request)
   }
 
   create_logout_handler(): lawn.Response_Generator {
