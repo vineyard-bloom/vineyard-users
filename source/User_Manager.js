@@ -181,7 +181,10 @@ var UserManager = (function () {
                         password: hashedPassword
                     }); })
                         .then(function () {
-                        return passwordString_1;
+                        return {
+                            tempPass: passwordString_1,
+                            userId: user.id
+                        };
                     });
                 }
                 else {
@@ -250,3 +253,4 @@ var User_Manager = (function (_super) {
     return User_Manager;
 }(UserManager));
 exports.User_Manager = User_Manager;
+//# sourceMappingURL=User_Manager.js.map

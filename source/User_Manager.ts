@@ -228,7 +228,10 @@ export class UserManager {
                   })
                 )
                 .then(() => {
-                  return passwordString
+                  return {
+                    tempPass: passwordString,
+                    userId: user.id
+                  }
                 })
             } else {
               return null
