@@ -160,12 +160,12 @@ export class UserManager {
 
   private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
     const expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000))
-    return new Date() < expirationDate
+    return new Date() > expirationDate
   }
 
   private emailCodeHasExpired(emailCode): boolean {
     const expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000))
-    return new Date() < expirationDate
+    return new Date() > expirationDate
   }
 
   matchTempPassword(user, password): Promise<boolean> {
@@ -173,23 +173,23 @@ export class UserManager {
       return Promise.resolve(false)
 
     return this.tempPasswordCollection.firstOrNull({user: user.id})
-      .then(tempPassword => {
-        if (!tempPassword)
+      .then(storedTempPass => {
+        if (!storedTempPass)
           return false
 
-        if (this.tempPasswordHasExpired(tempPassword))
-          return this.tempPasswordCollection.remove(tempPassword)
+        if (this.tempPasswordHasExpired(storedTempPass))
+          return this.tempPasswordCollection.remove(storedTempPass)
             .then(() => false)
 
-        return bcrypt.compare(tempPassword.password, user.password)
+        return bcrypt.compare(password, storedTempPass.password)
           .then(success => {
             if (!success)
               return false
 
             return this.getUserCollection().update(user, {
-              password: tempPassword.password
+              password: storedTempPass.password
             })
-              .then(() => this.tempPasswordCollection.remove(tempPassword))
+              .then(() => this.tempPasswordCollection.remove(storedTempPass))
               .then(() => true)
           })
       })
@@ -229,8 +229,8 @@ export class UserManager {
                 )
                 .then(() => {
                   return {
-                    tempPass: passwordString,
-                    userId: user.id
+                    password: passwordString,
+                    username: user.username
                   }
                 })
             } else {

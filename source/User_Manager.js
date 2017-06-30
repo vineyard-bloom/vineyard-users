@@ -121,31 +121,31 @@ var UserManager = (function () {
     };
     UserManager.prototype.tempPasswordHasExpired = function (tempPassword) {
         var expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000));
-        return new Date() < expirationDate;
+        return new Date() > expirationDate;
     };
     UserManager.prototype.emailCodeHasExpired = function (emailCode) {
         var expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000));
-        return new Date() < expirationDate;
+        return new Date() > expirationDate;
     };
     UserManager.prototype.matchTempPassword = function (user, password) {
         var _this = this;
         if (!this.tempPasswordCollection)
             return Promise.resolve(false);
         return this.tempPasswordCollection.firstOrNull({ user: user.id })
-            .then(function (tempPassword) {
-            if (!tempPassword)
+            .then(function (storedTempPass) {
+            if (!storedTempPass)
                 return false;
-            if (_this.tempPasswordHasExpired(tempPassword))
-                return _this.tempPasswordCollection.remove(tempPassword)
+            if (_this.tempPasswordHasExpired(storedTempPass))
+                return _this.tempPasswordCollection.remove(storedTempPass)
                     .then(function () { return false; });
-            return bcrypt.compare(tempPassword.password, user.password)
+            return bcrypt.compare(password, storedTempPass.password)
                 .then(function (success) {
                 if (!success)
                     return false;
                 return _this.getUserCollection().update(user, {
-                    password: tempPassword.password
+                    password: storedTempPass.password
                 })
-                    .then(function () { return _this.tempPasswordCollection.remove(tempPassword); })
+                    .then(function () { return _this.tempPasswordCollection.remove(storedTempPass); })
                     .then(function () { return true; });
             });
         });
@@ -182,8 +182,8 @@ var UserManager = (function () {
                     }); })
                         .then(function () {
                         return {
-                            tempPass: passwordString_1,
-                            userId: user.id
+                            password: passwordString_1,
+                            username: user.username
                         };
                     });
                 }
