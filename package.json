@@ -1,6 +1,6 @@
 {
   "name": "vineyard-users",
-  "version": "0.3.19",
+  "version": "0.3.27",
   "description": "Vineyard users and login infrastructure",
   "main": "source/index.js",
   "types": "source/index.d.ts",
@@ -13,13 +13,14 @@
   "dependencies": {
     "bcrypt": "^1.0.2",
     "connect-session-sequelize": "^4.1.0",
-    "express": "^4.15.2",
     "express-session": "^1.15.1",
-    "pg": "^6.2.2",
-    "sequelize": "^3.30.2",
     "speakeasy": "^2.0.0",
     "vineyard-ground": "0.2.x",
-    "vineyard-lawn": "0.4.x",
+    "vineyard-lawn": "0.5.x"
+  },
+  "peerDependencies": {
+    "express": "^4.15.2",
+    "sequelize": "^3.30.2",
     "vineyard-schema": "^0.2.2"
   },
   "devDependencies": {

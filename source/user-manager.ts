@@ -68,36 +68,37 @@ export class UserManager {
       }
     )
 
-    settings.model.ground.addDefinitions({
-      "TempPassword": {
-        "primary": "user",
-        "properties": {
-          "user": {
-            "type": "guid"
-          },
-          "password": {
-            "type": "string"
+    if (settings.model) {
+      settings.model.ground.addDefinitions({
+        "TempPassword": {
+          "primary": "user",
+          "properties": {
+            "user": {
+              "type": "guid"
+            },
+            "password": {
+              "type": "string"
+            }
+          }
+        },
+        "EmailVerification": {
+          "primary": "user",
+          "properties": {
+            "user": {
+              "type": "guid"
+            },
+            "code": {
+              "type": "string"
+            }
           }
         }
-      },
-      "EmailVerification": {
-        "primary": "user",
-        "properties": {
-          "user": {
-            "type": "guid"
-          },
-          "code": {
-            "type": "string"
-          }
-        }
-      }
-    })
+      })
 
-    this.tempPasswordCollection = settings.model.TempPassword
+      this.tempPasswordCollection = settings.model.TempPassword
+    }
   }
 
-
-  hashPassword(password) {
+  hashPassword(password): Promise<string> {
     return bcrypt.hash(password, 10)
   }
 
@@ -124,7 +125,7 @@ export class UserManager {
   }
 
   createUser(fields: any, uniqueField: string | string[] = 'username'): Promise<any> {
-    this.sanitizeRequest(fields)
+    // this.sanitizeRequest(fields)
     const uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField]
     return promiseEach(uniqueFields, field => this.checkUniqueness(fields, field))
       .then(() => {
@@ -158,15 +159,19 @@ export class UserManager {
   }
 
   private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
-    const expirationDate = new Date(tempPassword.created.getTime() + (6*60*60*1000))
-    if (Date.now() < expirationDate) {
-      return true
-    } else {
-      return false
-    }
+    const expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000))
+    return new Date() < expirationDate
+  }
+
+  private emailCodeHasExpired(emailCode): boolean {
+    const expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000))
+    return new Date() < expirationDate
   }
 
   matchTempPassword(user, password): Promise<boolean> {
+    if (!this.tempPasswordCollection)
+      return Promise.resolve(false)
+
     return this.tempPasswordCollection.firstOrNull({user: user.id})
       .then(tempPassword => {
         if (!tempPassword)
@@ -190,35 +195,72 @@ export class UserManager {
       })
   }
 
-  createTempPassword(user) {
-    this.getTempPassword(user)
-      .then(tempPassword => {
-        if(!tempPassword) {
-          this.tempPasswordCollection.create({
-            user: user,
-            password: this.hashPassword(Math.random().toString(36).slice(2))
-          })
-        }
-      })
-  }
-
-  getTempPassword(user) {
-    return this.tempPasswordCollection.firstOrNull({user: user.id})
-  }
-
   verifyEmail(user, code: string): Promise<boolean> {
     return this.emailVerificationCollection.firstOrNull({
       user: user
     })
-      .then(result => {
-        if (!result || result.code != code)
+      .then(emailCode => {
+        if (!emailCode || emailCode.code != code)
           return false
 
         return this.user_model.update(user, {
           emailVerified: true
         })
+          .then(() => this.emailVerificationCollection.remove(emailCode))
           .then(() => true)
       })
+  }
+
+  createTempPassword(username: string): Promise<any> {
+    return this.user_model.firstOrNull({username: username})
+      .then(user => {
+        if (!user)
+          throw new Error("Invalid username: " + username)
+
+        return this.getTempPassword(user)
+          .then(tempPassword => {
+            if (!tempPassword) {
+              const passwordString = Math.random().toString(36).slice(2)
+              return this.hashPassword(passwordString)
+                .then(hashedPassword => this.tempPasswordCollection.create({
+                    user: user,
+                    password: hashedPassword
+                  })
+                )
+                .then(() => {
+                  return passwordString
+                })
+            } else {
+              return null
+            }
+          })
+      })
+  }
+
+  createEmailCode(user): Promise<any> {
+    return this.getEmailCode(user)
+      .then(emailCode => {
+        if (!emailCode) {
+          const newEmlCode = Math.random().toString(36).slice(2)
+          return this.emailVerificationCollection.create({
+            user: user,
+            code: newEmlCode
+          })
+            .then(() => {
+              return newEmlCode
+            })
+        } else {
+          return emailCode
+        }
+      })
+  }
+
+  getEmailCode(user) {
+    return this.emailVerificationCollection.firstOrNull({user: user.id})
+  }
+
+  getTempPassword(user) {
+    return this.tempPasswordCollection.firstOrNull({user: user.id})
   }
 
   private sanitizeRequest(request) {
@@ -245,7 +287,7 @@ export class UserManager {
   }
 
   getTempPasswordCollection() {
-    //return this.tempPasswordCollection
+    return this.tempPasswordCollection
   }
 }
 
