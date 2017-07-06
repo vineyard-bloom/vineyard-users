@@ -1,6 +1,6 @@
 import {User_Manager} from "./User_Manager";
 const session = require('express-session');
-import {Method, HTTP_Error, Bad_Request, Request} from 'vineyard-lawn'
+import {Method, HTTP_Error, Bad_Request, Request, BadRequest} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as two_factor from './two-factor'
@@ -124,6 +124,32 @@ export class UserService {
           })
       }
     }, overrides)
+  }
+
+  createTempPassword(username: string): Promise<any> {
+    return this.user_manager.user_model.firstOrNull({username: username})
+      .then(user => {
+        if (!user)
+          throw new BadRequest("Invalid username: " + username)
+
+        return this.user_manager.getTempPassword(user)
+          .then(tempPassword => {
+            if (!tempPassword) {
+              const passwordString = Math.random().toString(36).slice(2)
+              return this.user_manager.hashPassword(passwordString)
+                .then(hashedPassword => this.user_manager.tempPasswordCollection.create({
+                    user: user,
+                    password: hashedPassword
+                  })
+                )
+                .then(() => {
+                  return passwordString
+                })
+            } else {
+              throw new BadRequest('A temporary password has already been created. Please try again at a later time.')
+            }
+          })
+      })
   }
 
   create_login_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {

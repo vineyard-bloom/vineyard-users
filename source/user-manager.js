@@ -165,31 +165,6 @@ var UserManager = (function () {
                 .then(function () { return true; });
         });
     };
-    UserManager.prototype.createTempPassword = function (username) {
-        var _this = this;
-        return this.user_model.firstOrNull({ username: username })
-            .then(function (user) {
-            if (!user)
-                throw new Error("Invalid username: " + username);
-            return _this.getTempPassword(user)
-                .then(function (tempPassword) {
-                if (!tempPassword) {
-                    var passwordString_1 = Math.random().toString(36).slice(2);
-                    return _this.hashPassword(passwordString_1)
-                        .then(function (hashedPassword) { return _this.tempPasswordCollection.create({
-                        user: user,
-                        password: hashedPassword
-                    }); })
-                        .then(function () {
-                        return passwordString_1;
-                    });
-                }
-                else {
-                    return null;
-                }
-            });
-        });
-    };
     UserManager.prototype.createEmailCode = function (user) {
         var _this = this;
         return this.getEmailCode(user)

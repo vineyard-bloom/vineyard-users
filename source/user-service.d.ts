@@ -20,6 +20,7 @@ export declare class UserService {
     createLogoutHandler(): lawn.Response_Generator;
     create_logout_handler(): lawn.Response_Generator;
     create_get_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
+    createTempPassword(username: string): Promise<any>;
     create_login_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     create_logout_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     create_all_endpoints(app: any): void;
