@@ -125,7 +125,7 @@ export class UserManager {
   }
 
   createUser(fields: any, uniqueField: string | string[] = 'username'): Promise<any> {
-    this.sanitizeRequest(fields)
+    // this.sanitizeRequest(fields)
     const uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField]
     return promiseEach(uniqueFields, field => this.checkUniqueness(fields, field))
       .then(() => {

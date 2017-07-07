@@ -1,6 +1,6 @@
 import {User_Manager} from "./User_Manager";
 const session = require('express-session');
-import {Method, HTTP_Error, Bad_Request, Request} from 'vineyard-lawn'
+import {Method, HTTP_Error, Bad_Request, Request, BadRequest} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as two_factor from './two-factor'
@@ -24,6 +24,9 @@ export class UserService {
   constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings) {
     this.user_manager = user_manager
     const SequelizeStore = require('connect-session-sequelize')(session.Store)
+
+    if (!settings.secret)
+      throw new Error("UserService settings.secret cannot be empty.")
 
     app.use(session({
       secret: settings.secret,
@@ -67,14 +70,18 @@ export class UserService {
       })
   }
 
-  private login(request, user) {
+  private finishLogin(request, user) {
     request.session.user = user.id
     return sanitize(user)
   }
 
+  login(request: Request) {
+    return this.checkLogin(request)
+      .then(user => this.finishLogin(request, user))
+  }
+
   create_login_handler(): lawn.Response_Generator {
-    return request => this.checkLogin(request)
-      .then(user => this.login(request, user))
+    return request => this.login(request)
   }
 
   create_login_2fa_handler(): lawn.Response_Generator {
@@ -83,18 +90,20 @@ export class UserService {
         if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
           throw new Bad_Request("Invalid 2FA token.")
 
-        return this.login(request, user)
+        return this.finishLogin(request, user)
       })
   }
 
-  createLogoutHandler(): lawn.Response_Generator {
-    return request => {
-      if (!request.session.user)
-        throw new Bad_Request('Already logged out.')
+  logout(request: Request) {
+    if (!request.session.user)
+      throw new Bad_Request('Already logged out.')
 
-      request.session.user = null
-      return Promise.resolve({})
-    }
+    request.session.user = null
+    return Promise.resolve({})
+  }
+
+  createLogoutHandler(): lawn.Response_Generator {
+    return request => this.logout(request)
   }
 
   create_logout_handler(): lawn.Response_Generator {
@@ -115,6 +124,32 @@ export class UserService {
           })
       }
     }, overrides)
+  }
+
+  createTempPassword(username: string): Promise<any> {
+    return this.user_manager.user_model.firstOrNull({username: username})
+      .then(user => {
+        if (!user)
+          throw new BadRequest("Invalid username: " + username)
+
+        return this.user_manager.getTempPassword(user)
+          .then(tempPassword => {
+            if (!tempPassword) {
+              const passwordString = Math.random().toString(36).slice(2)
+              return this.user_manager.hashPassword(passwordString)
+                .then(hashedPassword => this.user_manager.tempPasswordCollection.create({
+                    user: user,
+                    password: hashedPassword
+                  })
+                )
+                .then(() => {
+                  return passwordString
+                })
+            } else {
+              throw new BadRequest('A temporary password has already been created. Please try again at a later time.')
+            }
+          })
+      })
   }
 
   create_login_endpoint(app, overrides: lawn.Optional_Endpoint_Info = {}) {

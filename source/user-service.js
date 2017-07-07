@@ -24,6 +24,8 @@ var UserService = (function () {
     function UserService(app, user_manager, settings) {
         this.user_manager = user_manager;
         var SequelizeStore = require('connect-session-sequelize')(session.Store);
+        if (!settings.secret)
+            throw new Error("UserService settings.secret cannot be empty.");
         app.use(session({
             secret: settings.secret,
             store: new SequelizeStore({
@@ -61,14 +63,18 @@ var UserService = (function () {
                 : _this.checkTempPassword(user, request.data.password); });
         });
     };
-    UserService.prototype.login = function (request, user) {
+    UserService.prototype.finishLogin = function (request, user) {
         request.session.user = user.id;
         return sanitize(user);
     };
+    UserService.prototype.login = function (request) {
+        var _this = this;
+        return this.checkLogin(request)
+            .then(function (user) { return _this.finishLogin(request, user); });
+    };
     UserService.prototype.create_login_handler = function () {
         var _this = this;
-        return function (request) { return _this.checkLogin(request)
-            .then(function (user) { return _this.login(request, user); }); };
+        return function (request) { return _this.login(request); };
     };
     UserService.prototype.create_login_2fa_handler = function () {
         var _this = this;
@@ -76,16 +82,18 @@ var UserService = (function () {
             .then(function (user) {
             if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
                 throw new vineyard_lawn_1.Bad_Request("Invalid 2FA token.");
-            return _this.login(request, user);
+            return _this.finishLogin(request, user);
         }); };
     };
+    UserService.prototype.logout = function (request) {
+        if (!request.session.user)
+            throw new vineyard_lawn_1.Bad_Request('Already logged out.');
+        request.session.user = null;
+        return Promise.resolve({});
+    };
     UserService.prototype.createLogoutHandler = function () {
-        return function (request) {
-            if (!request.session.user)
-                throw new vineyard_lawn_1.Bad_Request('Already logged out.');
-            request.session.user = null;
-            return Promise.resolve({});
-        };
+        var _this = this;
+        return function (request) { return _this.logout(request); };
     };
     UserService.prototype.create_logout_handler = function () {
         return this.createLogoutHandler();
@@ -105,6 +113,31 @@ var UserService = (function () {
                 });
             }
         }, overrides);
+    };
+    UserService.prototype.createTempPassword = function (username) {
+        var _this = this;
+        return this.user_manager.user_model.firstOrNull({ username: username })
+            .then(function (user) {
+            if (!user)
+                throw new vineyard_lawn_1.BadRequest("Invalid username: " + username);
+            return _this.user_manager.getTempPassword(user)
+                .then(function (tempPassword) {
+                if (!tempPassword) {
+                    var passwordString_1 = Math.random().toString(36).slice(2);
+                    return _this.user_manager.hashPassword(passwordString_1)
+                        .then(function (hashedPassword) { return _this.user_manager.tempPasswordCollection.create({
+                        user: user,
+                        password: hashedPassword
+                    }); })
+                        .then(function () {
+                        return passwordString_1;
+                    });
+                }
+                else {
+                    throw new vineyard_lawn_1.BadRequest('A temporary password has already been created. Please try again at a later time.');
+                }
+            });
+        });
     };
     UserService.prototype.create_login_endpoint = function (app, overrides) {
         if (overrides === void 0) { overrides = {}; }
@@ -161,4 +194,4 @@ var User_Service = (function (_super) {
     return User_Service;
 }(UserService));
 exports.User_Service = User_Service;
-//# sourceMappingURL=User_Service.js.map
+//# sourceMappingURL=user-service.js.map

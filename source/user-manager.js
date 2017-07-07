@@ -91,7 +91,7 @@ var UserManager = (function () {
     UserManager.prototype.createUser = function (fields, uniqueField) {
         var _this = this;
         if (uniqueField === void 0) { uniqueField = 'username'; }
-        this.sanitizeRequest(fields);
+        // this.sanitizeRequest(fields)
         var uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField];
         return utility_1.promiseEach(uniqueFields, function (field) { return _this.checkUniqueness(fields, field); })
             .then(function () {
@@ -253,4 +253,4 @@ var User_Manager = (function (_super) {
     return User_Manager;
 }(UserManager));
 exports.User_Manager = User_Manager;
-//# sourceMappingURL=User_Manager.js.map
+//# sourceMappingURL=user-manager.js.map

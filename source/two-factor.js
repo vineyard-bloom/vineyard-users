@@ -74,6 +74,7 @@ function initializeTwoFactor(server) {
             validator: validators.verifyTwoFactor
         },
     ]);
+    return { validators: validators };
 }
 exports.initializeTwoFactor = initializeTwoFactor;
 //# sourceMappingURL=two-factor.js.map
