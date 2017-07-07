@@ -81,4 +81,5 @@ export function initializeTwoFactor(server) {
     },
 
   ])
+  return { validators: validators } 
 }
