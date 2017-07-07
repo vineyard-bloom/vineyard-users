@@ -143,7 +143,10 @@ export class UserService {
                   })
                 )
                 .then(() => {
-                  return passwordString
+                  return {
+                    tempPassword: passwordString,
+                    user: user
+                  }
                 })
             } else {
               throw new BadRequest('A temporary password has already been created. Please try again at a later time.')

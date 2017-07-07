@@ -130,7 +130,10 @@ var UserService = (function () {
                         password: hashedPassword
                     }); })
                         .then(function () {
-                        return passwordString_1;
+                        return {
+                            tempPassword: passwordString_1,
+                            user: user
+                        };
                     });
                 }
                 else {
