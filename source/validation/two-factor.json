@@ -1,9 +1,0 @@
-{
-  "verifyTwoFactor": {
-    "properties": {
-      "twoFactorToken": {"$ref": "vineyard-users#twoFactorToken"},
-      "twoFactor": {"$ref": "vineyard-users#twoFactorToken"},
-      "twoFactorSecret": {"$ref": "vineyard-users#twoFactorSecret"}
-    }
-  }
-}

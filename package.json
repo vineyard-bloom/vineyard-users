@@ -2,8 +2,8 @@
   "name": "vineyard-users",
   "version": "0.3.31",
   "description": "Vineyard users and login infrastructure",
-  "main": "source/index.js",
-  "types": "source/index.d.ts",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
