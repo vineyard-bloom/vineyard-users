@@ -85,7 +85,7 @@ export class UserManager {
           "primary": "user",
           "properties": {
             "user": {
-              "type": "guid"
+              "type": "User"
             },
             "code": {
               "type": "string"
@@ -95,6 +95,7 @@ export class UserManager {
       })
 
       this.tempPasswordCollection = settings.model.TempPassword
+      this.emailVerificationCollection = settings.model.ground.collections.EmailVerification
     }
   }
 
@@ -195,22 +196,6 @@ export class UserManager {
       })
   }
 
-  verifyEmail(user, code: string): Promise<boolean> {
-    return this.emailVerificationCollection.firstOrNull({
-      user: user
-    })
-      .then(emailCode => {
-        if (!emailCode || emailCode.code != code)
-          return false
-
-        return this.user_model.update(user, {
-          emailVerified: true
-        })
-          .then(() => this.emailVerificationCollection.remove(emailCode))
-          .then(() => true)
-      })
-  }
-
   createTempPassword(username: string): Promise<any> {
     return this.user_model.firstOrNull({username: username})
       .then(user => {
@@ -255,6 +240,28 @@ export class UserManager {
         } else {
           return emailCode
         }
+      })
+  }
+
+  verifyEmailCode(userId, submittedCode): Promise<boolean> {
+    return this.user_model.firstOrNull({ id: userId })
+      .then(user => {
+        if (!user)
+          return false
+
+        return this.emailVerificationCollection.firstOrNull({
+          user: userId
+        })
+          .then(emailCode => {
+            if (!emailCode || emailCode.code != submittedCode)
+              return false
+
+            return this.user_model.update(user, {
+              emailVerified: true
+            })
+              // .then(() => this.emailVerificationCollection.remove(emailCode))
+              .then(() => true)
+          })
       })
   }
 

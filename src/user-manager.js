@@ -56,7 +56,7 @@ var UserManager = (function () {
                     "primary": "user",
                     "properties": {
                         "user": {
-                            "type": "guid"
+                            "type": "User"
                         },
                         "code": {
                             "type": "string"
@@ -65,6 +65,7 @@ var UserManager = (function () {
                 }
             });
             this.tempPasswordCollection = settings.model.TempPassword;
+            this.emailVerificationCollection = settings.model.ground.collections.EmailVerification;
         }
     }
     UserManager.prototype.hashPassword = function (password) {
@@ -150,21 +151,6 @@ var UserManager = (function () {
             });
         });
     };
-    UserManager.prototype.verifyEmail = function (user, code) {
-        var _this = this;
-        return this.emailVerificationCollection.firstOrNull({
-            user: user
-        })
-            .then(function (emailCode) {
-            if (!emailCode || emailCode.code != code)
-                return false;
-            return _this.user_model.update(user, {
-                emailVerified: true
-            })
-                .then(function () { return _this.emailVerificationCollection.remove(emailCode); })
-                .then(function () { return true; });
-        });
-    };
     UserManager.prototype.createTempPassword = function (username) {
         var _this = this;
         return this.user_model.firstOrNull({ username: username })
@@ -210,6 +196,25 @@ var UserManager = (function () {
             else {
                 return emailCode;
             }
+        });
+    };
+    UserManager.prototype.verifyEmailCode = function (userId, submittedCode) {
+        var _this = this;
+        return this.user_model.firstOrNull({ id: userId })
+            .then(function (user) {
+            if (!user)
+                return false;
+            return _this.emailVerificationCollection.firstOrNull({
+                user: userId
+            })
+                .then(function (emailCode) {
+                if (!emailCode || emailCode.code != submittedCode)
+                    return false;
+                return _this.user_model.update(user, {
+                    emailVerified: true
+                })
+                    .then(function () { return true; });
+            });
         });
     };
     UserManager.prototype.getEmailCode = function (user) {
