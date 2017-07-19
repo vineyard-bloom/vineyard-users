@@ -59,22 +59,39 @@ function getTwoFactorToken(secret) {
     });
 }
 exports.getTwoFactorToken = getTwoFactorToken;
-function initializeTwoFactor(server) {
-    var validators = server.compileApiSchema(require('./validation/two-factor.json'));
-    server.createPublicEndpoints([
-        {
+var TwoFactorEndpoints = (function () {
+    function TwoFactorEndpoints(compiler) {
+        this.validators = compiler.compileApiSchema(require('./validation/two-factor.json'));
+    }
+    TwoFactorEndpoints.prototype.getNewSecret = function () {
+        return {
             method: vineyard_lawn_1.Method.get,
             path: "user/2fa",
-            action: get_2fa_token()
-        },
-        {
+            action: get_2fa_token(),
+            validator: this.validators.empty
+        };
+    };
+    TwoFactorEndpoints.prototype.verifyToken = function () {
+        return {
             method: vineyard_lawn_1.Method.post,
             path: "user/2fa",
             action: verify_2fa_token_handler(),
-            validator: validators.verifyTwoFactor
-        },
+            validator: this.validators.verifyTwoFactor
+        };
+    };
+    TwoFactorEndpoints.prototype.getValidators = function () {
+        return this.validators;
+    };
+    return TwoFactorEndpoints;
+}());
+exports.TwoFactorEndpoints = TwoFactorEndpoints;
+function initializeTwoFactor(server) {
+    var endpoints = new TwoFactorEndpoints(server);
+    server.createPublicEndpoints([
+        endpoints.getNewSecret(),
+        endpoints.verifyToken(),
     ]);
-    return { validators: validators };
+    return { validators: endpoints.getValidators() };
 }
 exports.initializeTwoFactor = initializeTwoFactor;
 //# sourceMappingURL=two-factor.js.map

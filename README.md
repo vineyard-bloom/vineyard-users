@@ -5,7 +5,7 @@ Vineyard Users is a library that adds common user features to the Vineyard ecosy
 ## Features
 
 * SQL session store.
-* Password encryption.
+* Salted password storage.
 * User creation, logging in, and logging out.
 * Two factor authentication.
 * User roles.
@@ -18,5 +18,5 @@ Vineyard Users is primarily divided into two parts:
 
 1. **User Manager** - Provides basic initialization and storage of User and Session entities.
 
-2. **User Service** - Provides User web service features, mostly revolving around authentication and session management.
+2. **User Service** - Provides user web service features.  Depends on the User Manager.
 
