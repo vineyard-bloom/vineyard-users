@@ -15,7 +15,7 @@
     "connect-session-sequelize": "^4.1.0",
     "express-session": "^1.15.1",
     "speakeasy": "^2.0.0",
-    "vineyard-ground": "0.2.x",
+    "vineyard-ground": "^0.2.x",
     "vineyard-lawn": "0.5.x"
   },
   "peerDependencies": {
