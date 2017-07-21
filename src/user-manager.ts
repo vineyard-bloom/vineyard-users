@@ -85,7 +85,7 @@ export class UserManager {
           "primary": "user",
           "properties": {
             "user": {
-              "type": "guid"
+              "type": "User"
             },
             "code": {
               "type": "string"
@@ -95,6 +95,7 @@ export class UserManager {
       })
 
       this.tempPasswordCollection = settings.model.TempPassword
+      this.emailVerificationCollection = settings.model.ground.collections.EmailVerification
     }
   }
 
@@ -160,12 +161,12 @@ export class UserManager {
 
   private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
     const expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000))
-    return new Date() < expirationDate
+    return new Date() > expirationDate
   }
 
   private emailCodeHasExpired(emailCode): boolean {
     const expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000))
-    return new Date() < expirationDate
+    return new Date() > expirationDate
   }
 
   matchTempPassword(user, password): Promise<boolean> {
@@ -173,41 +174,25 @@ export class UserManager {
       return Promise.resolve(false)
 
     return this.tempPasswordCollection.firstOrNull({user: user.id})
-      .then(tempPassword => {
-        if (!tempPassword)
+      .then(storedTempPass => {
+        if (!storedTempPass)
           return false
 
-        if (this.tempPasswordHasExpired(tempPassword))
-          return this.tempPasswordCollection.remove(tempPassword)
+        if (this.tempPasswordHasExpired(storedTempPass))
+          return this.tempPasswordCollection.remove(storedTempPass)
             .then(() => false)
 
-        return bcrypt.compare(tempPassword.password, user.password)
+        return bcrypt.compare(password, storedTempPass.password)
           .then(success => {
             if (!success)
               return false
 
             return this.getUserCollection().update(user, {
-              password: tempPassword.password
+              password: storedTempPass.password
             })
-              .then(() => this.tempPasswordCollection.remove(tempPassword))
+              .then(() => this.tempPasswordCollection.remove(storedTempPass))
               .then(() => true)
           })
-      })
-  }
-
-  verifyEmail(user, code: string): Promise<boolean> {
-    return this.emailVerificationCollection.firstOrNull({
-      user: user
-    })
-      .then(emailCode => {
-        if (!emailCode || emailCode.code != code)
-          return false
-
-        return this.user_model.update(user, {
-          emailVerified: true
-        })
-          .then(() => this.emailVerificationCollection.remove(emailCode))
-          .then(() => true)
       })
   }
 
@@ -228,7 +213,10 @@ export class UserManager {
                   })
                 )
                 .then(() => {
-                  return passwordString
+                  return {
+                    password: passwordString,
+                    username: user.username
+                  }
                 })
             } else {
               return null
@@ -252,6 +240,28 @@ export class UserManager {
         } else {
           return emailCode
         }
+      })
+  }
+
+  verifyEmailCode(userId, submittedCode): Promise<boolean> {
+    return this.user_model.firstOrNull({ id: userId })
+      .then(user => {
+        if (!user)
+          return false
+
+        return this.emailVerificationCollection.firstOrNull({
+          user: userId
+        })
+          .then(emailCode => {
+            if (!emailCode || emailCode.code != submittedCode)
+              return false
+
+            return this.user_model.update(user, {
+              emailVerified: true
+            })
+              // .then(() => this.emailVerificationCollection.remove(emailCode))
+              .then(() => true)
+          })
       })
   }
 

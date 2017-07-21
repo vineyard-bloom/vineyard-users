@@ -114,6 +114,34 @@ var UserService = (function () {
             }
         }, overrides);
     };
+    UserService.prototype.createTempPassword = function (username) {
+        var _this = this;
+        return this.user_manager.user_model.firstOrNull({ username: username })
+            .then(function (user) {
+            if (!user)
+                throw new vineyard_lawn_1.BadRequest("Invalid username: " + username);
+            return _this.user_manager.getTempPassword(user)
+                .then(function (tempPassword) {
+                if (!tempPassword) {
+                    var passwordString_1 = Math.random().toString(36).slice(2);
+                    return _this.user_manager.hashPassword(passwordString_1)
+                        .then(function (hashedPassword) { return _this.user_manager.tempPasswordCollection.create({
+                        user: user,
+                        password: hashedPassword
+                    }); })
+                        .then(function () {
+                        return {
+                            tempPassword: passwordString_1,
+                            user: user
+                        };
+                    });
+                }
+                else {
+                    throw new vineyard_lawn_1.BadRequest('A temporary password has already been created. Please try again at a later time.');
+                }
+            });
+        });
+    };
     UserService.prototype.create_login_endpoint = function (app, overrides) {
         if (overrides === void 0) { overrides = {}; }
         lawn.create_endpoint_with_defaults(app, {

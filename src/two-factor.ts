@@ -1,4 +1,5 @@
 import {Response_Generator, Bad_Request, create_endpoints, Method, Request} from "vineyard-lawn";
+import {ValidationCompiler} from "../../vineyard-lawn/source/types";
 const speakeasy = require("speakeasy")
 
 const window = 2
@@ -62,23 +63,44 @@ export function getTwoFactorToken(secret: string) {
   })
 }
 
-export function initializeTwoFactor(server) {
-  const validators = server.compileApiSchema(require('./validation/two-factor.json'))
+export class TwoFactorEndpoints {
+  private validators: any
 
-  server.createPublicEndpoints([
+  constructor(compiler: ValidationCompiler) {
+    this.validators = compiler.compileApiSchema(require('./validation/two-factor.json'))
+  }
 
-    {
+  getNewSecret() {
+    return {
       method: Method.get,
       path: "user/2fa",
-      action: get_2fa_token()
-    },
+      action: get_2fa_token(),
+      validator: this.validators.empty
+    }
+  }
 
-    {
+  verifyToken() {
+    return {
       method: Method.post,
       path: "user/2fa",
       action: verify_2fa_token_handler(),
-      validator: validators.verifyTwoFactor
-    },
+      validator: this.validators.verifyTwoFactor
+    }
+  }
+
+  getValidators(): any {
+    return this.validators
+  }
+}
+
+export function initializeTwoFactor(server) {
+  const endpoints = new TwoFactorEndpoints(server)
+
+  server.createPublicEndpoints([
+
+    endpoints.getNewSecret(),
+    endpoints.verifyToken(),
 
   ])
+  return {validators: endpoints.getValidators()}
 }

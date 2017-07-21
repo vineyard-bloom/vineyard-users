@@ -1,11 +1,11 @@
-import {User_Manager} from '../../source/index'
-import * as vineyard_users from '../../source/index'
+import {User_Manager} from '../../src/index'
+import * as vineyard_users from '../../src/index'
 import * as lawn from 'vineyard-lawn'
 import * as Sequelize from 'sequelize'
 import {Schema} from "vineyard-schema/source/scheming";
 import {Modeler} from "vineyard-ground/source/modeler";
-import {initialize_2fa} from "../../source/two-factor";
-import {User_Service} from "../../source/User_Service";
+import {initialize_2fa} from "../../src/two-factor";
+import {User_Service} from "../../src/User_Service";
 
 const config = require('../config/config.json');
 

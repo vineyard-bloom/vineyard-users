@@ -1,9 +1,9 @@
 {
   "name": "vineyard-users",
-  "version": "0.3.27",
+  "version": "0.3.33",
   "description": "Vineyard users and login infrastructure",
-  "main": "source/index.js",
-  "types": "source/index.d.ts",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,7 +15,7 @@
     "connect-session-sequelize": "^4.1.0",
     "express-session": "^1.15.1",
     "speakeasy": "^2.0.0",
-    "vineyard-ground": "0.2.x",
+    "vineyard-ground": "^0.2.x",
     "vineyard-lawn": "0.5.x"
   },
   "peerDependencies": {

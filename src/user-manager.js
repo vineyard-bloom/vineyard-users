@@ -56,7 +56,7 @@ var UserManager = (function () {
                     "primary": "user",
                     "properties": {
                         "user": {
-                            "type": "guid"
+                            "type": "User"
                         },
                         "code": {
                             "type": "string"
@@ -65,6 +65,7 @@ var UserManager = (function () {
                 }
             });
             this.tempPasswordCollection = settings.model.TempPassword;
+            this.emailVerificationCollection = settings.model.ground.collections.EmailVerification;
         }
     }
     UserManager.prototype.hashPassword = function (password) {
@@ -121,48 +122,33 @@ var UserManager = (function () {
     };
     UserManager.prototype.tempPasswordHasExpired = function (tempPassword) {
         var expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000));
-        return new Date() < expirationDate;
+        return new Date() > expirationDate;
     };
     UserManager.prototype.emailCodeHasExpired = function (emailCode) {
         var expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000));
-        return new Date() < expirationDate;
+        return new Date() > expirationDate;
     };
     UserManager.prototype.matchTempPassword = function (user, password) {
         var _this = this;
         if (!this.tempPasswordCollection)
             return Promise.resolve(false);
         return this.tempPasswordCollection.firstOrNull({ user: user.id })
-            .then(function (tempPassword) {
-            if (!tempPassword)
+            .then(function (storedTempPass) {
+            if (!storedTempPass)
                 return false;
-            if (_this.tempPasswordHasExpired(tempPassword))
-                return _this.tempPasswordCollection.remove(tempPassword)
+            if (_this.tempPasswordHasExpired(storedTempPass))
+                return _this.tempPasswordCollection.remove(storedTempPass)
                     .then(function () { return false; });
-            return bcrypt.compare(tempPassword.password, user.password)
+            return bcrypt.compare(password, storedTempPass.password)
                 .then(function (success) {
                 if (!success)
                     return false;
                 return _this.getUserCollection().update(user, {
-                    password: tempPassword.password
+                    password: storedTempPass.password
                 })
-                    .then(function () { return _this.tempPasswordCollection.remove(tempPassword); })
+                    .then(function () { return _this.tempPasswordCollection.remove(storedTempPass); })
                     .then(function () { return true; });
             });
-        });
-    };
-    UserManager.prototype.verifyEmail = function (user, code) {
-        var _this = this;
-        return this.emailVerificationCollection.firstOrNull({
-            user: user
-        })
-            .then(function (emailCode) {
-            if (!emailCode || emailCode.code != code)
-                return false;
-            return _this.user_model.update(user, {
-                emailVerified: true
-            })
-                .then(function () { return _this.emailVerificationCollection.remove(emailCode); })
-                .then(function () { return true; });
         });
     };
     UserManager.prototype.createTempPassword = function (username) {
@@ -181,7 +167,10 @@ var UserManager = (function () {
                         password: hashedPassword
                     }); })
                         .then(function () {
-                        return passwordString_1;
+                        return {
+                            password: passwordString_1,
+                            username: user.username
+                        };
                     });
                 }
                 else {
@@ -207,6 +196,25 @@ var UserManager = (function () {
             else {
                 return emailCode;
             }
+        });
+    };
+    UserManager.prototype.verifyEmailCode = function (userId, submittedCode) {
+        var _this = this;
+        return this.user_model.firstOrNull({ id: userId })
+            .then(function (user) {
+            if (!user)
+                return false;
+            return _this.emailVerificationCollection.firstOrNull({
+                user: userId
+            })
+                .then(function (emailCode) {
+                if (!emailCode || emailCode.code != submittedCode)
+                    return false;
+                return _this.user_model.update(user, {
+                    emailVerified: true
+                })
+                    .then(function () { return true; });
+            });
         });
     };
     UserManager.prototype.getEmailCode = function (user) {

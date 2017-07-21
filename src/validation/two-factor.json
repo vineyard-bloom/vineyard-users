@@ -1,4 +1,6 @@
 {
+  "empty": {
+  },
   "verifyTwoFactor": {
     "properties": {
       "twoFactorToken": {"$ref": "vineyard-users#twoFactorToken"},
