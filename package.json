@@ -15,13 +15,12 @@
     "connect-session-sequelize": "^4.1.0",
     "express-session": "^1.15.1",
     "speakeasy": "^2.0.0",
-    "vineyard-ground": "^0.2.x",
-    "vineyard-lawn": "0.5.x"
+    "vineyard-ground": "vineyard-bloom/vineyard-ground",
+    "vineyard-lawn": "vineyard-bloom/vineyard-lawn"
   },
   "peerDependencies": {
     "express": "^4.15.2",
-    "sequelize": "^3.30.2",
-    "vineyard-schema": "^0.2.2"
+    "sequelize": "^3.30.2"
   },
   "devDependencies": {
     "@types/es6-promise": "0.0.32",
