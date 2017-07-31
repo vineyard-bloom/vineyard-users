@@ -57,15 +57,24 @@ export class UserService {
   }
 
   private checkLogin(request) {
-    return this.user_manager.User_Model.first({username: request.data.username})
+    const {
+      username: reqUsername,
+      password: reqPass,
+      email: reqEmail
+    } = request.data
+
+    const queryObj = reqUsername 
+      ? { username: reqUsername } 
+      : { email: reqEmail }
+    return this.user_manager.User_Model.first(queryObj)
       .then(user => {
         if (!user)
-          throw new Bad_Request('Incorrect username or password.')
+          throw new Bad_Request('Incorrect username, email or password.')
 
-        return bcrypt.compare(request.data.password, user.password)
+        return bcrypt.compare(reqPass, user.password)
           .then(success => success
             ? user
-            : this.checkTempPassword(user, request.data.password)
+            : this.checkTempPassword(user, reqPass)
           )
       })
   }

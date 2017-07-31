@@ -53,14 +53,18 @@ var UserService = (function () {
     };
     UserService.prototype.checkLogin = function (request) {
         var _this = this;
-        return this.user_manager.User_Model.first({ username: request.data.username })
+        var _a = request.data, reqUsername = _a.username, reqPass = _a.password, reqEmail = _a.email;
+        var queryObj = reqUsername
+            ? { username: reqUsername }
+            : { email: reqEmail };
+        return this.user_manager.User_Model.first(queryObj)
             .then(function (user) {
             if (!user)
-                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.');
-            return bcrypt.compare(request.data.password, user.password)
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username, email or password.');
+            return bcrypt.compare(reqPass, user.password)
                 .then(function (success) { return success
                 ? user
-                : _this.checkTempPassword(user, request.data.password); });
+                : _this.checkTempPassword(user, reqPass); });
         });
     };
     UserService.prototype.finishLogin = function (request, user) {
