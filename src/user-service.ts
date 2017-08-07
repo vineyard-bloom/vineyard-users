@@ -50,7 +50,7 @@ export class UserService {
     return this.user_manager.matchTempPassword(user, password)
       .then(success => {
         if (!success)
-          throw new Bad_Request('Incorrect username or password.', { key: 'invalid-user-pass' })
+          throw new Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' })
 
         return user
       })
@@ -69,7 +69,7 @@ export class UserService {
     return this.user_manager.User_Model.first(queryObj)
       .then(user => {
         if (!user)
-          throw new Bad_Request('Incorrect username or password.', { key: 'invalid-user-pass' })
+          throw new Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' })
 
         return bcrypt.compare(reqPass, user.password)
           .then(success => success
@@ -105,7 +105,7 @@ export class UserService {
 
   logout(request: Request) {
     if (!request.session.user)
-      throw new Bad_Request('Already logged out.', { key: 'logged-out' })
+      throw new Bad_Request('Already logged out.', { key: 'already-logged-out' })
 
     request.session.user = null
     return Promise.resolve({})
@@ -167,7 +167,7 @@ export class UserService {
               throw new BadRequest(
                 "A temporary password has already been created. Please try again at a later time.", 
                 {
-                  key: 'temp-password-created'
+                  key: 'existing-temp-password'
                 }
               )
             }

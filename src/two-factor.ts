@@ -34,7 +34,7 @@ export function verify_2fa_request(request: Request): string {
     return two_factor_secret
   }
 
-  throw new Bad_Request("Verification failed.", { key: "verification-fail" })
+  throw new Bad_Request("Invalid Two Factor secret.", { key: "invalid-2fa" })
 }
 
 export function verify_2fa_token_handler(): Response_Generator {
