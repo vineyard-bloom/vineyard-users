@@ -1,4 +1,3 @@
-/// <reference types="sequelize" />
 import * as Sequelize from 'sequelize';
 export interface Table_Keys {
     id: string;
@@ -19,9 +18,9 @@ export declare class UserManager {
     private tempPasswordCollection;
     private emailVerificationCollection;
     constructor(db: Sequelize.Sequelize, settings: Settings);
-    hashPassword(password: any): any;
-    prepareNewUser(fields: any): any;
-    prepare_new_user(fields: any): any;
+    hashPassword(password: any): Promise<string>;
+    prepareNewUser(fields: any): Promise<any>;
+    prepare_new_user(fields: any): Promise<any>;
     create_user(fields: any, uniqueField?: string | string[]): Promise<any>;
     createUser(fields: any, uniqueField?: string | string[]): Promise<any>;
     getUser(id: any): Promise<User_With_Password>;
@@ -29,9 +28,13 @@ export declare class UserManager {
     getUserCollection(): any;
     private validateParameters(request);
     private tempPasswordHasExpired(tempPassword);
+    private emailCodeHasExpired(emailCode);
     matchTempPassword(user: any, password: any): Promise<boolean>;
-    createTempPassword(user: any): void;
-    verifyEmail(user: any, code: string): Promise<boolean>;
+    createTempPassword(username: string): Promise<any>;
+    createEmailCode(user: any): Promise<any>;
+    verifyEmailCode(userId: any, submittedCode: any): Promise<boolean>;
+    getEmailCode(user: any): any;
+    getTempPassword(user: any): any;
     private sanitizeRequest(request);
     fieldExists(key: string, value: any): Promise<boolean>;
     checkUniqueness(user: any, field?: string): Promise<void>;

@@ -158,7 +158,7 @@ export class UserService {
                   }
                 })
             } else {
-              throw new BadRequest('temp-password-c')
+              throw new BadRequest('temp-password-created')
             }
           })
       })
