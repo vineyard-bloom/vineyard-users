@@ -47,7 +47,7 @@ var UserService = (function () {
         return this.user_manager.matchTempPassword(user, password)
             .then(function (success) {
             if (!success)
-                throw new vineyard_lawn_1.Bad_Request('invalid-user-pass');
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-user-pass' });
             return user;
         });
     };
@@ -60,7 +60,7 @@ var UserService = (function () {
         return this.user_manager.User_Model.first(queryObj)
             .then(function (user) {
             if (!user)
-                throw new vineyard_lawn_1.Bad_Request('invalid-user-pass');
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-user-pass' });
             return bcrypt.compare(reqPass, user.password)
                 .then(function (success) { return success
                 ? user
@@ -85,13 +85,13 @@ var UserService = (function () {
         return function (request) { return _this.checkLogin(request)
             .then(function (user) {
             if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-                throw new vineyard_lawn_1.Bad_Request("invalid-2fa");
+                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
             return _this.finishLogin(request, user);
         }); };
     };
     UserService.prototype.logout = function (request) {
         if (!request.session.user)
-            throw new vineyard_lawn_1.Bad_Request('logged-out');
+            throw new vineyard_lawn_1.Bad_Request('Already logged out.', { key: 'logged-out' });
         request.session.user = null;
         return Promise.resolve({});
     };
@@ -112,7 +112,7 @@ var UserService = (function () {
                 return _this.user_manager.getUser(request.session.user)
                     .then(function (user) {
                     if (!user)
-                        throw new vineyard_lawn_1.Bad_Request('invalid-user-id');
+                        throw new vineyard_lawn_1.Bad_Request("Invalid user ID", { key: 'invalid-user-id' });
                     return sanitize(user);
                 });
             }
@@ -123,7 +123,10 @@ var UserService = (function () {
         return this.user_manager.user_model.firstOrNull({ username: username })
             .then(function (user) {
             if (!user)
-                throw new vineyard_lawn_1.BadRequest({ key: "invalid-username", data: username });
+                throw new vineyard_lawn_1.BadRequest("Invalid username", {
+                    key: "invalid-username",
+                    data: { username: username }
+                });
             return _this.user_manager.getTempPassword(user)
                 .then(function (tempPassword) {
                 if (!tempPassword) {
@@ -141,7 +144,9 @@ var UserService = (function () {
                     });
                 }
                 else {
-                    throw new vineyard_lawn_1.BadRequest('temp-password-created');
+                    throw new vineyard_lawn_1.BadRequest("A temporary password has already been created. Please try again at a later time.", {
+                        key: 'temp-password-created'
+                    });
                 }
             });
         });
@@ -184,7 +189,10 @@ var UserService = (function () {
         var keyName = request.data.key;
         var value = request.data.value;
         if (fieldOptions.indexOf(keyName) == -1)
-            throw new vineyard_lawn_1.Bad_Request({ key: 'invalid-user-field', data: keyName });
+            throw new vineyard_lawn_1.Bad_Request('Invalid user field', {
+                key: 'invalid-user-field',
+                data: { field: keyName }
+            });
         return this.user_manager.fieldExists(keyName, value)
             .then(function (result) { return ({
             exists: result

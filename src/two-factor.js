@@ -26,11 +26,11 @@ exports.verify_2fa_token = verify_2fa_token;
 function verify_2fa_request(request) {
     var two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret;
     if (!two_factor_secret)
-        throw new vineyard_lawn_1.Bad_Request("no-2-fa");
+        throw new vineyard_lawn_1.Bad_Request("Two Factor secret must be generated before verifying.", { key: "no-2-fa" });
     if (verify_2fa_token(two_factor_secret, request.data.twoFactorToken || request.data.twoFactor)) {
         return two_factor_secret;
     }
-    throw new vineyard_lawn_1.Bad_Request("verification-fail");
+    throw new vineyard_lawn_1.Bad_Request("Verification failed.", { key: "verification-fail" });
 }
 exports.verify_2fa_request = verify_2fa_request;
 function verify_2fa_token_handler() {
