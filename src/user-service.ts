@@ -167,7 +167,7 @@ export class UserService {
               throw new BadRequest(
                 "A temporary password has already been created. Please try again at a later time.", 
                 {
-                  key: 'existing-temp-password'
+                  key: 'existing-temp-pass'
                 }
               )
             }
