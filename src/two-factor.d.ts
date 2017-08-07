@@ -1,4 +1,4 @@
-import { Response_Generator, Method, Request } from "vineyard-lawn";
+import { Response_Generator, Request } from "vineyard-lawn";
 import { ValidationCompiler } from "../../vineyard-lawn/source/types";
 export declare function get_2fa_token(): Response_Generator;
 export declare function verify_2fa_token(secret: any, token: any): boolean;
@@ -10,15 +10,15 @@ export declare class TwoFactorEndpoints {
     private validators;
     constructor(compiler: ValidationCompiler);
     getNewSecret(): {
-        method: Method;
+        method: any;
         path: string;
-        action: Response_Generator;
+        action: any;
         validator: any;
     };
     verifyToken(): {
-        method: Method;
+        method: any;
         path: string;
-        action: Response_Generator;
+        action: any;
         validator: any;
     };
     getValidators(): any;
