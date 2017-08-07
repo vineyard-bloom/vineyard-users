@@ -139,7 +139,7 @@ export class UserService {
     return this.user_manager.user_model.firstOrNull({username: username})
       .then(user => {
         if (!user)
-          throw new BadRequest({ key: "invalid-username", msg: "Invalid username", data: username })
+          throw new BadRequest({ key: "invalid-username", msg: "Invalid username", data: { username: username } })
 
         return this.user_manager.getTempPassword(user)
           .then(tempPassword => {
@@ -210,7 +210,7 @@ export class UserService {
     const keyName = request.data.key
     const value = request.data.value
     if (fieldOptions.indexOf(keyName) == -1)
-      throw new Bad_Request({ key: 'invalid-user-field', msg: 'Invalid user field', data: keyName})
+      throw new Bad_Request({ key: 'invalid-user-field', msg: 'Invalid user field', data: { field: keyName } })
 
     return this.user_manager.fieldExists(keyName, value)
       .then(result => ({
