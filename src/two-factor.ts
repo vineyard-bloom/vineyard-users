@@ -28,13 +28,13 @@ export function verify_2fa_request(request: Request): string {
   const two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret
 
   if (!two_factor_secret)
-    throw new Bad_Request("no-2-fa")
+    throw new Bad_Request({ key: "no-2-fa", msg: "Two Factor secret must be generated before verifying."})
 
   if (verify_2fa_token(two_factor_secret, request.data.twoFactorToken || request.data.twoFactor)) {
     return two_factor_secret
   }
 
-  throw new Bad_Request("verification-fail")
+  throw new Bad_Request({ key: "verification-fail", msg: "Verification failed."})
 }
 
 export function verify_2fa_token_handler(): Response_Generator {

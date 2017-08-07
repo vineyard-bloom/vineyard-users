@@ -50,7 +50,7 @@ export class UserService {
     return this.user_manager.matchTempPassword(user, password)
       .then(success => {
         if (!success)
-          throw new Bad_Request('invalid-user-pass')
+          throw new Bad_Request({ key: 'invalid-user-pass', msg: 'Incorrect username or password.' })
 
         return user
       })
@@ -69,7 +69,7 @@ export class UserService {
     return this.user_manager.User_Model.first(queryObj)
       .then(user => {
         if (!user)
-          throw new Bad_Request('invalid-user-pass')
+          throw new Bad_Request({ key: 'invalid-user-pass', msg: 'Incorrect username or password.' })
 
         return bcrypt.compare(reqPass, user.password)
           .then(success => success
@@ -97,7 +97,7 @@ export class UserService {
     return request => this.checkLogin(request)
       .then(user => {
         if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-          throw new Bad_Request("invalid-2fa")
+          throw new Bad_Request({ key: "invalid-2fa", msg: 'Invalid Two Factor Authentication code.'})
 
         return this.finishLogin(request, user)
       })
@@ -105,7 +105,7 @@ export class UserService {
 
   logout(request: Request) {
     if (!request.session.user)
-      throw new Bad_Request('logged-out')
+      throw new Bad_Request({ key: 'logged-out', msg: 'Already logged out.' })
 
     request.session.user = null
     return Promise.resolve({})
@@ -127,7 +127,7 @@ export class UserService {
         return this.user_manager.getUser(request.session.user)
           .then(user => {
             if (!user)
-              throw new Bad_Request('invalid-user-id')
+              throw new Bad_Request({ key: 'invalid-user-id', msg: "Invalid user ID" })
 
             return sanitize(user)
           })
@@ -139,7 +139,7 @@ export class UserService {
     return this.user_manager.user_model.firstOrNull({username: username})
       .then(user => {
         if (!user)
-          throw new BadRequest({ key: "invalid-username", data: username })
+          throw new BadRequest({ key: "invalid-username", msg: "Invalid username", data: username })
 
         return this.user_manager.getTempPassword(user)
           .then(tempPassword => {
@@ -158,7 +158,10 @@ export class UserService {
                   }
                 })
             } else {
-              throw new BadRequest('temp-password-created')
+              throw new BadRequest({
+                key: 'temp-password-created',
+                msg: "A temporary password has already been created. Please try again at a later time."
+              })
             }
           })
       })
@@ -207,7 +210,7 @@ export class UserService {
     const keyName = request.data.key
     const value = request.data.value
     if (fieldOptions.indexOf(keyName) == -1)
-      throw new Bad_Request({ key: 'invalid-user-field', data: keyName})
+      throw new Bad_Request({ key: 'invalid-user-field', msg: 'Invalid user field', data: keyName})
 
     return this.user_manager.fieldExists(keyName, value)
       .then(result => ({
