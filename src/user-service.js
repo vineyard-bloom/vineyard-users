@@ -47,20 +47,24 @@ var UserService = (function () {
         return this.user_manager.matchTempPassword(user, password)
             .then(function (success) {
             if (!success)
-                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.');
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-user-pass' });
             return user;
         });
     };
     UserService.prototype.checkLogin = function (request) {
         var _this = this;
-        return this.user_manager.User_Model.first({ username: request.data.username })
+        var _a = request.data, reqUsername = _a.username, reqPass = _a.password, reqEmail = _a.email;
+        var queryObj = reqUsername
+            ? { username: reqUsername }
+            : { email: reqEmail };
+        return this.user_manager.User_Model.first(queryObj)
             .then(function (user) {
             if (!user)
-                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.');
-            return bcrypt.compare(request.data.password, user.password)
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-user-pass' });
+            return bcrypt.compare(reqPass, user.password)
                 .then(function (success) { return success
                 ? user
-                : _this.checkTempPassword(user, request.data.password); });
+                : _this.checkTempPassword(user, reqPass); });
         });
     };
     UserService.prototype.finishLogin = function (request, user) {
@@ -81,13 +85,13 @@ var UserService = (function () {
         return function (request) { return _this.checkLogin(request)
             .then(function (user) {
             if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-                throw new vineyard_lawn_1.Bad_Request("Invalid 2FA token.");
+                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
             return _this.finishLogin(request, user);
         }); };
     };
     UserService.prototype.logout = function (request) {
         if (!request.session.user)
-            throw new vineyard_lawn_1.Bad_Request('Already logged out.');
+            throw new vineyard_lawn_1.Bad_Request('Already logged out.', { key: 'logged-out' });
         request.session.user = null;
         return Promise.resolve({});
     };
@@ -108,7 +112,7 @@ var UserService = (function () {
                 return _this.user_manager.getUser(request.session.user)
                     .then(function (user) {
                     if (!user)
-                        throw new vineyard_lawn_1.Bad_Request('Invalid user id.');
+                        throw new vineyard_lawn_1.Bad_Request("Invalid user ID", { key: 'invalid-user-id' });
                     return sanitize(user);
                 });
             }
@@ -119,7 +123,10 @@ var UserService = (function () {
         return this.user_manager.user_model.firstOrNull({ username: username })
             .then(function (user) {
             if (!user)
-                throw new vineyard_lawn_1.BadRequest("Invalid username: " + username);
+                throw new vineyard_lawn_1.BadRequest("Invalid username", {
+                    key: "invalid-username",
+                    data: { username: username }
+                });
             return _this.user_manager.getTempPassword(user)
                 .then(function (tempPassword) {
                 if (!tempPassword) {
@@ -137,7 +144,9 @@ var UserService = (function () {
                     });
                 }
                 else {
-                    throw new vineyard_lawn_1.BadRequest('A temporary password has already been created. Please try again at a later time.');
+                    throw new vineyard_lawn_1.BadRequest("A temporary password has already been created. Please try again at a later time.", {
+                        key: 'temp-password-created'
+                    });
                 }
             });
         });
@@ -177,11 +186,14 @@ var UserService = (function () {
         ajv.addSchema(require('./validation/helpers.json'));
     };
     UserService.prototype.fieldExists = function (request, fieldOptions) {
-        var key = request.data.key;
+        var keyName = request.data.key;
         var value = request.data.value;
-        if (fieldOptions.indexOf(key) == -1)
-            throw new vineyard_lawn_1.Bad_Request('Invalid user field: "' + key + '"');
-        return this.user_manager.fieldExists(key, value)
+        if (fieldOptions.indexOf(keyName) == -1)
+            throw new vineyard_lawn_1.Bad_Request('Invalid user field', {
+                key: 'invalid-user-field',
+                data: { field: keyName }
+            });
+        return this.user_manager.fieldExists(keyName, value)
             .then(function (result) { return ({
             exists: result
         }); });
