@@ -30,7 +30,7 @@ function verify_2fa_request(request) {
     if (verify_2fa_token(two_factor_secret, request.data.twoFactorToken || request.data.twoFactor)) {
         return two_factor_secret;
     }
-    throw new vineyard_lawn_1.Bad_Request("Verification failed.", { key: "verification-fail" });
+    throw new vineyard_lawn_1.Bad_Request("Invalid Two Factor secret.", { key: "invalid-2fa" });
 }
 exports.verify_2fa_request = verify_2fa_request;
 function verify_2fa_token_handler() {
