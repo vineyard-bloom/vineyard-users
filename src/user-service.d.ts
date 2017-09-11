@@ -11,6 +11,7 @@ export declare class UserService {
     user_manager: User_Manager;
     constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
     private checkTempPassword(user, password);
+    checkPassword(password: string, hash: string): any;
     private checkLogin(request);
     private finishLogin(request, user);
     login(request: Request): any;
