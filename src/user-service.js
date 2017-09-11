@@ -51,6 +51,9 @@ var UserService = (function () {
             return user;
         });
     };
+    UserService.prototype.checkPassword = function (password, hash) {
+        return bcrypt.compare(password, hash);
+    };
     UserService.prototype.checkLogin = function (request) {
         var _this = this;
         var _a = request.data, reqUsername = _a.username, reqPass = _a.password, reqEmail = _a.email;

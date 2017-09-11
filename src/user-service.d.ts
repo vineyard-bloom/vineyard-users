@@ -1,3 +1,4 @@
+/// <reference types="express" />
 import { User_Manager } from "./User_Manager";
 import { Request } from 'vineyard-lawn';
 import * as lawn from 'vineyard-lawn';
@@ -15,7 +16,7 @@ export declare class UserService {
     login(request: Request): any;
     create_login_handler(): lawn.Response_Generator;
     create_login_2fa_handler(): lawn.Response_Generator;
-    logout(request: Request): any;
+    logout(request: Request): Promise<{}>;
     createLogoutHandler(): lawn.Response_Generator;
     create_logout_handler(): lawn.Response_Generator;
     create_get_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;

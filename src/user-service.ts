@@ -56,6 +56,10 @@ export class UserService {
       })
   }
 
+  checkPassword(password: string, hash: string) {
+    return bcrypt.compare(password, hash)
+  }
+
   private checkLogin(request) {
     const {
       username: reqUsername,
