@@ -36,7 +36,8 @@ var UserService = (function () {
                         expires: defaults.expires,
                         user: session.user
                     };
-                }
+                },
+                checkExpirationInterval: 5 * 60 * 1000
             }),
             cookie: settings.cookie || {},
             resave: false,
