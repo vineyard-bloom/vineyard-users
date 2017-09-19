@@ -36,7 +36,8 @@ var UserService = (function () {
                         expires: defaults.expires,
                         user: session.user
                     };
-                }
+                },
+                checkExpirationInterval: 5 * 60 * 1000
             }),
             cookie: settings.cookie || {},
             resave: false,
@@ -47,9 +48,12 @@ var UserService = (function () {
         return this.user_manager.matchTempPassword(user, password)
             .then(function (success) {
             if (!success)
-                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-user-pass' });
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
             return user;
         });
+    };
+    UserService.prototype.checkPassword = function (password, hash) {
+        return bcrypt.compare(password, hash);
     };
     UserService.prototype.checkLogin = function (request) {
         var _this = this;
@@ -60,7 +64,7 @@ var UserService = (function () {
         return this.user_manager.User_Model.first(queryObj)
             .then(function (user) {
             if (!user)
-                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-user-pass' });
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
             return bcrypt.compare(reqPass, user.password)
                 .then(function (success) { return success
                 ? user
@@ -91,7 +95,7 @@ var UserService = (function () {
     };
     UserService.prototype.logout = function (request) {
         if (!request.session.user)
-            throw new vineyard_lawn_1.Bad_Request('Already logged out.', { key: 'logged-out' });
+            throw new vineyard_lawn_1.Bad_Request('Already logged out.', { key: 'already-logged-out' });
         request.session.user = null;
         return Promise.resolve({});
     };
@@ -145,7 +149,7 @@ var UserService = (function () {
                 }
                 else {
                     throw new vineyard_lawn_1.BadRequest("A temporary password has already been created. Please try again at a later time.", {
-                        key: 'temp-password-created'
+                        key: 'existing-temp-pass'
                     });
                 }
             });

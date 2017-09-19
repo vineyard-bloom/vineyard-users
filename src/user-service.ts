@@ -1,4 +1,5 @@
 import {User_Manager} from "./User_Manager";
+
 const session = require('express-session');
 import {Method, HTTP_Error, Bad_Request, Request, BadRequest} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
@@ -38,7 +39,8 @@ export class UserService {
             expires: defaults.expires,
             user: session.user
           };
-        }
+        },
+        checkExpirationInterval: 5 * 60 * 1000
       }),
       cookie: settings.cookie || {},
       resave: false,
@@ -50,10 +52,14 @@ export class UserService {
     return this.user_manager.matchTempPassword(user, password)
       .then(success => {
         if (!success)
-          throw new Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' })
+          throw new Bad_Request('Incorrect username or password.', {key: 'invalid-credentials'})
 
         return user
       })
+  }
+
+  checkPassword(password: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(password, hash)
   }
 
   private checkLogin(request) {
@@ -63,13 +69,13 @@ export class UserService {
       email: reqEmail
     } = request.data
 
-    const queryObj = reqUsername 
-      ? { username: reqUsername } 
-      : { email: reqEmail }
+    const queryObj = reqUsername
+      ? {username: reqUsername}
+      : {email: reqEmail}
     return this.user_manager.User_Model.first(queryObj)
       .then(user => {
         if (!user)
-          throw new Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' })
+          throw new Bad_Request('Incorrect username or password.', {key: 'invalid-credentials'})
 
         return bcrypt.compare(reqPass, user.password)
           .then(success => success
@@ -97,7 +103,7 @@ export class UserService {
     return request => this.checkLogin(request)
       .then(user => {
         if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-          throw new Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" })
+          throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
 
         return this.finishLogin(request, user)
       })
@@ -105,7 +111,7 @@ export class UserService {
 
   logout(request: Request) {
     if (!request.session.user)
-      throw new Bad_Request('Already logged out.', { key: 'already-logged-out' })
+      throw new Bad_Request('Already logged out.', {key: 'already-logged-out'})
 
     request.session.user = null
     return Promise.resolve({})
@@ -127,7 +133,7 @@ export class UserService {
         return this.user_manager.getUser(request.session.user)
           .then(user => {
             if (!user)
-              throw new Bad_Request("Invalid user ID", { key: 'invalid-user-id' })
+              throw new Bad_Request("Invalid user ID", {key: 'invalid-user-id'})
 
             return sanitize(user)
           })
@@ -143,7 +149,7 @@ export class UserService {
             "Invalid username",
             {
               key: "invalid-username",
-              data: { username: username }
+              data: {username: username}
             }
           )
 
@@ -165,7 +171,7 @@ export class UserService {
                 })
             } else {
               throw new BadRequest(
-                "A temporary password has already been created. Please try again at a later time.", 
+                "A temporary password has already been created. Please try again at a later time.",
                 {
                   key: 'existing-temp-pass'
                 }
@@ -222,7 +228,7 @@ export class UserService {
         'Invalid user field',
         {
           key: 'invalid-user-field',
-          data: { field: keyName }
+          data: {field: keyName}
         }
       )
 
