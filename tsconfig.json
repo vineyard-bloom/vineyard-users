@@ -2,9 +2,9 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es5",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "sourceMap": true,
     "declaration": true,
-    "newLine": "LF"
+    "newLine": "lf"
   }
  }
