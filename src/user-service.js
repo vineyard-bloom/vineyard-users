@@ -88,9 +88,11 @@ var UserService = (function () {
         var _this = this;
         return function (request) { return _this.checkLogin(request)
             .then(function (user) {
-            if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
-            return _this.finishLogin(request, user);
+            return two_factor.verify_2fa_backup_code(request, _this.user_manager).then(function (backupCodeCheck) {
+                if (user.two_factor_enabled /*&& !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor)*/ && !)
+                    throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+                return _this.finishLogin(request, user);
+            });
         }); };
     };
     UserService.prototype.logout = function (request) {

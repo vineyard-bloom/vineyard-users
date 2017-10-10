@@ -102,10 +102,12 @@ export class UserService {
   create_login_2fa_handler(): lawn.Response_Generator {
     return request => this.checkLogin(request)
       .then(user => {
-        if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-          throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
+        return two_factor.verify_2fa_backup_code(request, this.user_manager).then(backupCodeCheck => {
+          if (user.two_factor_enabled /*&& !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor)*/ && !)
+            throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
 
-        return this.finishLogin(request, user)
+          return this.finishLogin(request, user)
+        })
       })
   }
 

@@ -66,6 +66,7 @@ var UserManager = (function () {
             });
             this.tempPasswordCollection = settings.model.TempPassword;
             this.emailVerificationCollection = settings.model.ground.collections.EmailVerification;
+            this.oneTimeCodeCollection = settings.model.ground.collections.Onetimecode;
         }
     }
     UserManager.prototype.hashPassword = function (password) {
@@ -222,6 +223,9 @@ var UserManager = (function () {
     };
     UserManager.prototype.getTempPassword = function (user) {
         return this.tempPasswordCollection.firstOrNull({ user: user.id });
+    };
+    UserManager.prototype.getUserOneTimeCodes = function (user) {
+        return this.oneTimeCodeCollection.filter({ user: user.id }).then(function (records) { return records.map(records, function (record) { return record.available ? record.code : false; }); });
     };
     UserManager.prototype.sanitizeRequest = function (request) {
         var check = this.validateParameters(request);

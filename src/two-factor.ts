@@ -24,6 +24,15 @@ export function verify_2fa_token(secret, token): boolean {
   })
 }
 
+export function verify_2fa_backup_code(request: Request, userManager): Promise<string> {
+  return userManager.getUserOneTimeCodes(request.session.user).then(codes => {
+    if (codes.includes(request.data.twoFactorToken)) {
+      throw new Bad_Request("Invalid Two Factor secret.", {key: "invalid-2fa"})
+    }
+    return request.data.twoFactorToken
+  })
+}
+
 export function verify_2fa_request(request: Request): string {
   const two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret
 

@@ -28,6 +28,12 @@ interface EmailVerification {
   code: string
 }
 
+interface Onetimecode {
+  user: string
+  code: string
+  available: boolean
+}
+
 export class UserManager {
   db: Sequelize.Sequelize
   User_Model: any
@@ -36,6 +42,7 @@ export class UserManager {
   private table_keys: Table_Keys;
   private tempPasswordCollection: Collection<TempPassword>
   private emailVerificationCollection: Collection<EmailVerification>
+  private oneTimeCodeCollection: Collection<Onetimecode>
 
   constructor(db: Sequelize.Sequelize, settings: Settings) {
     this.db = db;
@@ -96,6 +103,7 @@ export class UserManager {
 
       this.tempPasswordCollection = settings.model.TempPassword
       this.emailVerificationCollection = settings.model.ground.collections.EmailVerification
+      this.oneTimeCodeCollection = settings.model.ground.collections.Onetimecode
     }
   }
 
@@ -146,6 +154,8 @@ export class UserManager {
   getUserCollection() {
     return this.user_model
   }
+
+
 
   private validateParameters(request) {
     const invalidUserChars = request.username.match(/[^\w_]/g);
@@ -271,6 +281,10 @@ export class UserManager {
 
   getTempPassword(user) {
     return this.tempPasswordCollection.firstOrNull({user: user.id})
+  }
+
+  getUserOneTimeCodes(user) {
+    return this.oneTimeCodeCollection.filter({user: user.id}).then(records => records.map(records, record => record.available ? record.code : false))
   }
 
   private sanitizeRequest(request) {
