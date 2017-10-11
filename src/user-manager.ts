@@ -1,7 +1,7 @@
 import * as Sequelize from 'sequelize'
 import {promiseEach} from "./utility";
-import {Collection} from "vineyard-ground"
-import {Modeler} from "../../vineyard-ground/source/modeler";
+import {Collection, Query} from "vineyard-ground"
+import {User, User_With_Password} from "./User"
 
 const bcrypt = require('bcrypt');
 
@@ -12,29 +12,29 @@ export interface Table_Keys {
 }
 
 export interface Settings {
-  user_model
-  table_keys?
-  model
+  user_model: any
+  table_keys?: any
+  model: any
 }
 
-interface TempPassword {
+export interface TempPassword {
   user: string
   password: string
-  created
+  created: any
 }
 
-interface EmailVerification {
-  email: string
+export interface EmailVerification {
+  user: string
   code: string
 }
 
 export class UserManager {
   db: Sequelize.Sequelize
-  User_Model: any
-  user_model: any
-  private sessionCollection;
+  User_Model: Collection<User_With_Password>
+  user_model: Collection<User_With_Password>
+  private sessionCollection: any;
   private table_keys: Table_Keys;
-  private tempPasswordCollection: Collection<TempPassword>
+  tempPasswordCollection: Collection<TempPassword>
   private emailVerificationCollection: Collection<EmailVerification>
 
   constructor(db: Sequelize.Sequelize, settings: Settings) {
@@ -46,10 +46,10 @@ export class UserManager {
       throw new Error("Missing user_model settings argument.");
 
     this.table_keys = settings.table_keys || {
-        id: "id",
-        username: "username,",
-        password: "password"
-      }
+      id: "id",
+      username: "username,",
+      password: "password"
+    }
 
     this.User_Model = this.user_model = settings.user_model
 
@@ -99,12 +99,12 @@ export class UserManager {
     }
   }
 
-  hashPassword(password): Promise<string> {
+  hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10)
   }
 
-  prepareNewUser(fields) {
-    if (!fields.roles && this.User_Model.trellis.properties.roles)
+  prepareNewUser(fields: any) {
+    if (!fields.roles && (this.User_Model as any).trellis.properties.roles)
       fields.roles = [];
 
     if (typeof fields.email === 'string')
@@ -117,26 +117,26 @@ export class UserManager {
       })
   }
 
-  prepare_new_user(fields) {
+  prepare_new_user(fields: any) {
     return this.prepareNewUser(fields)
   }
 
-  create_user(fields, uniqueField: string | string[] = 'username'): Promise<any> {
+  create_user(fields: any, uniqueField: string | string[] = 'username'): Promise<any> {
     return this.createUser(fields, uniqueField)
   }
 
   createUser(fields: any, uniqueField: string | string[] = 'username'): Promise<any> {
     // this.sanitizeRequest(fields)
     const uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField]
-    return promiseEach(uniqueFields, field => this.checkUniqueness(fields, field))
+    return promiseEach(uniqueFields, (field: any) => this.checkUniqueness(fields, field))
       .then(() => {
         return this.prepare_new_user(fields)
           .then(user => this.User_Model.create(fields))
       })
   }
 
-  getUser(id): Promise<User_With_Password> {
-    return this.User_Model.get(id)
+  getUser(id: { id: string } | string): Promise<User_With_Password | undefined> {
+    return this.User_Model.get(id).exec()
   }
 
   getSessionCollection() {
@@ -147,7 +147,7 @@ export class UserManager {
     return this.user_model
   }
 
-  private validateParameters(request) {
+  private validateParameters(request: { username: string }) {
     const invalidUserChars = request.username.match(/[^\w_]/g);
     const invalidPassChars = request.username.match(/[^\w_\-?!]/g);
     return {
@@ -164,17 +164,17 @@ export class UserManager {
     return new Date() > expirationDate
   }
 
-  private emailCodeHasExpired(emailCode): boolean {
+  private emailCodeHasExpired(emailCode: { created: Date }): boolean {
     const expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000))
     return new Date() > expirationDate
   }
 
-  matchTempPassword(user, password): Promise<boolean> {
+  matchTempPassword(user: User, password: string): Promise<boolean> {
     if (!this.tempPasswordCollection)
       return Promise.resolve(false)
 
     return this.tempPasswordCollection.firstOrNull({user: user.id})
-      .then(storedTempPass => {
+      .then((storedTempPass: any) => {
         if (!storedTempPass)
           return false
 
@@ -183,7 +183,7 @@ export class UserManager {
             .then(() => false)
 
         return bcrypt.compare(password, storedTempPass.password)
-          .then(success => {
+          .then((success: boolean) => {
             if (!success)
               return false
 
@@ -198,7 +198,7 @@ export class UserManager {
 
   createTempPassword(username: string): Promise<any> {
     return this.user_model.firstOrNull({username: username})
-      .then(user => {
+      .then((user?: User) => {
         if (!user)
           throw new Error("Invalid username: " + username)
 
@@ -219,13 +219,13 @@ export class UserManager {
                   }
                 })
             } else {
-              return null
+              return Promise.resolve(undefined)
             }
           })
       })
   }
 
-  createEmailCode(user): Promise<any> {
+  createEmailCode(user: User): Promise<any> {
     return this.getEmailCode(user)
       .then(emailCode => {
         if (!emailCode) {
@@ -234,46 +234,44 @@ export class UserManager {
             user: user,
             code: newEmlCode
           })
-            .then(() => {
-              return newEmlCode
-            })
+            .then(() => newEmlCode)
         } else {
-          return emailCode
+          return Promise.resolve(emailCode.code)
         }
       })
   }
 
-  verifyEmailCode(userId, submittedCode): Promise<boolean> {
-    return this.user_model.firstOrNull({ id: userId })
+  verifyEmailCode(userId: string, submittedCode: string): Promise<boolean> {
+    return this.user_model.firstOrNull({id: userId})
       .then(user => {
         if (!user)
-          return false
+          return Promise.resolve(false)
 
         return this.emailVerificationCollection.firstOrNull({
           user: userId
         })
           .then(emailCode => {
             if (!emailCode || emailCode.code != submittedCode)
-              return false
+              return Promise.resolve(false)
 
             return this.user_model.update(user, {
               emailVerified: true
             })
-              // .then(() => this.emailVerificationCollection.remove(emailCode))
+            // .then(() => this.emailVerificationCollection.remove(emailCode))
               .then(() => true)
           })
       })
   }
 
-  getEmailCode(user) {
-    return this.emailVerificationCollection.firstOrNull({user: user.id})
+  getEmailCode(user: User) {
+    return this.emailVerificationCollection.firstOrNull({user: user.id}).exec()
   }
 
-  getTempPassword(user) {
-    return this.tempPasswordCollection.firstOrNull({user: user.id})
+  getTempPassword(user: User) {
+    return this.tempPasswordCollection.firstOrNull({user: user.id}).exec()
   }
 
-  private sanitizeRequest(request) {
+  private sanitizeRequest(request: any) {
     const check = this.validateParameters(request);
     if (check.valid !== true) {
       throw new Error(`Parameters contain the following invalid characters ${check.invalidChars}`)
@@ -281,13 +279,13 @@ export class UserManager {
   }
 
   fieldExists(key: string, value: any): Promise<boolean> {
-    const filter = {}
+    const filter: any = {}
     filter[key] = value
-    return this.User_Model.first_or_null(filter)
-      .then((user) => !!user)
+    return this.User_Model.first_or_null(filter).exec()
+      .then((user?: User) => !!user)
   }
 
-  checkUniqueness(user, field = 'username') {
+  checkUniqueness(user: User, field = 'username') {
     return this.fieldExists(field, user[field])
       .then(result => {
         if (result) {

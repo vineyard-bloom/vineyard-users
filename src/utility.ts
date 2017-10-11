@@ -1,3 +1,5 @@
+import {Role, User} from "./User";
+
 export type Role_Id_Parameter = Role | number
 
 export function has_role(user: User, role: Role_Id_Parameter) {
@@ -31,7 +33,7 @@ export function has_any_role(user: User, roles: Role_Id_Parameter[]) {
   return false
 }
 
-export function promiseEach(items, action) {
+export function promiseEach(items: any[], action: any) {
   if (items.length == 0)
     return Promise.resolve()
 

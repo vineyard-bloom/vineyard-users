@@ -1,13 +1,12 @@
 import * as assert from 'assert'
-import {Server} from "../source/server"
 
 require('source-map-support').install()
 
 const request_original = require('request').defaults({jar: true, json: true})
 
-function request(options): Promise<any> {
+function request(options: any): Promise<any> {
   return new Promise(function (resolve, reject) {
-    request_original(options, function (error, response, body) {
+    request_original(options, function (error: Error, response: any, body: any) {
       const options2 = options
       if (error)
         reject(error)
@@ -28,10 +27,10 @@ function get_2fa_token_from_url(secret: string) {
 }
 
 describe('user-test', function () {
-  let server
+  let server: any
   this.timeout(5000)
 
-  function local_request(method, url, body?) {
+  function local_request(method: string, url: string, body?: any) {
     return request({
       url: "http://" + server.get_url() + '/' + url,
       method: method,
@@ -39,24 +38,24 @@ describe('user-test', function () {
     })
   }
 
-  function login(username, password) {
+  function login(username: string, password: string) {
     return local_request('post', 'user/login', {
       username: username,
       password: password
     })
   }
 
-  before(function () {
-    server = new Server()
-    return server.start()
-      .then(() => {
-        const db = server.get_db()
-        return db.sync({force: true})
-          .then(() => {
-            return server.get_user_manager().create_user({username: 'froggy', password: 'test'})
-          })
-      })
-  });
+  // before(function () {
+  //   server = new Server()
+  //   return server.start()
+  //     .then(() => {
+  //       const db = server.get_db()
+  //       return db.sync({force: true})
+  //         .then(() => {
+  //           return server.get_user_manager().create_user({username: 'froggy', password: 'test'})
+  //         })
+  //     })
+  // });
 
   after(function () {
     // return server.stop()
@@ -70,7 +69,7 @@ describe('user-test', function () {
         assert.equal(undefined, user.password);
         console.log(server.user_manager)
         return server.user_manager.Session_Model.findAll()
-          .then(result => {
+          .then((result: any) => {
             assert.equal(1, result.length)
             // assert.equal(1, result.dataValues.user)
           })
@@ -83,7 +82,7 @@ describe('user-test', function () {
       })
       .then(function () {
         return server.user_manager.Session_Model.findOne()
-          .then(result => {
+          .then((result: any) => {
             assert(result);
             assert.equal(null, result.dataValues.user)
           })

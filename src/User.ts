@@ -1,17 +1,18 @@
 
-interface Role {
+export interface Role {
   id: number
   name: string
 }
 
-interface User {
+export interface User {
+  id: string
   username: string
-  password: string
   two_factor_secret: string
   two_factor_enabled: boolean
   roles: Role[]
+  [key: string]: any
 }
 
-interface User_With_Password extends User {
+export interface User_With_Password extends User {
   password: string
 }
