@@ -155,7 +155,9 @@ export class UserManager {
     return this.user_model
   }
 
-
+  getOneTimeCodeCollection() {
+    return this.oneTimeCodeCollection
+  }
 
   private validateParameters(request) {
     const invalidUserChars = request.username.match(/[^\w_]/g);
@@ -283,8 +285,8 @@ export class UserManager {
     return this.tempPasswordCollection.firstOrNull({user: user.id})
   }
 
-  getUserOneTimeCodes(user) {
-    return this.oneTimeCodeCollection.filter({user: user.id}).then(records => records.map(records, record => record.available ? record.code : false))
+  getUserOneTimeCode(user) {
+    return this.oneTimeCodeCollection.first({user: user.id, available: true})
   }
 
   private sanitizeRequest(request) {
@@ -299,6 +301,35 @@ export class UserManager {
     filter[key] = value
     return this.User_Model.first_or_null(filter)
       .then((user) => !!user)
+  }
+
+
+  compareOneTimeCode(oneTimeCode, code) {
+    return bcrypt.compare(oneTimeCode, code).then(success => {
+      if (!success)
+        return false
+
+      return true
+    })
+  }
+
+  setOneTimeCodeToUnavailable(oneTimeCode) {
+    return this.oneTimeCodeCollection.get({ code: oneTimeCode}).then(codeRecord =>
+      this.oneTimeCodeCollection.update(oneTimeCode.id, { available: false })
+    )
+  }
+
+  createOneTimeCodeForUser(userId) {
+    const randomNumber = () => Math.floor(Math.random() * 10).toString()
+    const randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber()
+    const saltedRandomCode =
+    bcrypt.hash(randomCode, 10).then(saltedRandomCode =>
+      this.oneTimeCodeCollection.create({
+        user: userId,
+        code: saltedRandomCode,
+        available: true
+      })
+    )
   }
 
   checkUniqueness(user, field = 'username') {

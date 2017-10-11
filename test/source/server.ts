@@ -5,7 +5,7 @@ import * as Sequelize from 'sequelize'
 import {Schema} from "vineyard-schema/source/scheming";
 import {Modeler} from "vineyard-ground/source/modeler";
 import {initialize_2fa} from "../../src/two-factor";
-import {User_Service} from "../../src/User_Service";
+import {User_Service} from "../../src/user-service";
 
 const config = require('../config/config.json');
 

@@ -110,6 +110,9 @@ var UserManager = (function () {
     UserManager.prototype.getUserCollection = function () {
         return this.user_model;
     };
+    UserManager.prototype.getOneTimeCodeCollection = function () {
+        return this.oneTimeCodeCollection;
+    };
     UserManager.prototype.validateParameters = function (request) {
         var invalidUserChars = request.username.match(/[^\w_]/g);
         var invalidPassChars = request.username.match(/[^\w_\-?!]/g);
@@ -224,8 +227,8 @@ var UserManager = (function () {
     UserManager.prototype.getTempPassword = function (user) {
         return this.tempPasswordCollection.firstOrNull({ user: user.id });
     };
-    UserManager.prototype.getUserOneTimeCodes = function (user) {
-        return this.oneTimeCodeCollection.filter({ user: user.id }).then(function (records) { return records.map(records, function (record) { return record.available ? record.code : false; }); });
+    UserManager.prototype.getUserOneTimeCode = function (user) {
+        return this.oneTimeCodeCollection.first({ user: user.id, available: true });
     };
     UserManager.prototype.sanitizeRequest = function (request) {
         var check = this.validateParameters(request);
@@ -238,6 +241,31 @@ var UserManager = (function () {
         filter[key] = value;
         return this.User_Model.first_or_null(filter)
             .then(function (user) { return !!user; });
+    };
+    UserManager.prototype.compareOneTimeCode = function (oneTimeCode, code) {
+        return bcrypt.compare(oneTimeCode, code).then(function (success) {
+            if (!success)
+                return false;
+            return true;
+        });
+    };
+    UserManager.prototype.setOneTimeCodeToUnavailable = function (oneTimeCode) {
+        var _this = this;
+        return this.oneTimeCodeCollection.get({ code: oneTimeCode }).then(function (codeRecord) {
+            return _this.oneTimeCodeCollection.update(oneTimeCode.id, { available: false });
+        });
+    };
+    UserManager.prototype.createOneTimeCodeForUser = function (userId) {
+        var _this = this;
+        var randomNumber = function () { return Math.floor(Math.random() * 10).toString(); };
+        var randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber();
+        var saltedRandomCode = bcrypt.hash(randomCode, 10).then(function (saltedRandomCode) {
+            return _this.oneTimeCodeCollection.create({
+                user: userId,
+                code: saltedRandomCode,
+                available: true
+            });
+        });
     };
     UserManager.prototype.checkUniqueness = function (user, field) {
         if (field === void 0) { field = 'username'; }

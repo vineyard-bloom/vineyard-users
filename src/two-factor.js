@@ -23,15 +23,6 @@ function verify_2fa_token(secret, token) {
     });
 }
 exports.verify_2fa_token = verify_2fa_token;
-function verify_2fa_backup_code(request, userManager) {
-    return userManager.getUserOneTimeCodes(request.session.user).then(function (codes) {
-        if (codes.includes(request.data.twoFactorToken)) {
-            throw new vineyard_lawn_1.Bad_Request("Invalid Two Factor secret.", { key: "invalid-2fa" });
-        }
-        return request.data.twoFactorToken;
-    });
-}
-exports.verify_2fa_backup_code = verify_2fa_backup_code;
 function verify_2fa_request(request) {
     var two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret;
     if (!two_factor_secret)

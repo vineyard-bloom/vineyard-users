@@ -149,4 +149,21 @@ describe('user-test', function () {
           assert(true)
       })
   })
+
+  it('create valid backup code', function () {
+    let currentUser
+    return server.user_manager.getUserCollection.first({username: 'froggy'}).then(user => {
+      currentUser = user
+      return server.user_manager.createOneTimeCodeForUser(user.id)
+    }).then(oneTimeCode =>
+      server.user_manager.getUserOneTimeCode(currentUser.id).then(code =>
+        server.user_manager.compareOneTimeCode(code, oneTimeCode).then(response => {
+          assert(response === true)
+          server.user_Manager.getUserOneTimeCode(currentUser.id).then(code =>
+            assert(code.available === false)
+          )
+        })
+      )
+    )
+  })
 })

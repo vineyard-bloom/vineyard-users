@@ -88,12 +88,25 @@ var UserService = (function () {
         var _this = this;
         return function (request) { return _this.checkLogin(request)
             .then(function (user) {
-            return two_factor.verify_2fa_backup_code(request, _this.user_manager).then(function (backupCodeCheck) {
-                if (user.two_factor_enabled /*&& !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor)*/ && !)
+            return _this.verify2faOneTimeCode(request).then(function (backupCodeCheck) {
+                if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor) && !backupCodeCheck)
                     throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
                 return _this.finishLogin(request, user);
             });
         }); };
+    };
+    UserService.prototype.verify2faOneTimeCode = function (request) {
+        var _this = this;
+        return this.user_manager.getUserCollection.first({ username: request.data.username }).then(function (user) {
+            return _this.user_manager.getUserOneTimeCode(user).then(function (code) {
+                if (!_this.user_manager.compareOneTimeCode(request.data.twoFactorToken, code)) {
+                    return false;
+                }
+                return _this.user_manager.setOneTimeCodeToUnavailable(code).then(function () {
+                    return true;
+                });
+            });
+        });
     };
     UserService.prototype.logout = function (request) {
         if (!request.session.user)
