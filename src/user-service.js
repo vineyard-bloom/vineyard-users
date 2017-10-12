@@ -93,7 +93,7 @@ var UserService = (function () {
             return _this.finishLogin(request, user);
         }); };
     };
-    UserService.prototype.create_login_2fa_handler_with_backup = function () {
+    UserService.prototype.createLogin2faHandlerWithBackup = function () {
         var _this = this;
         var currentUser;
         return function (request) { return _this.checkLogin(request)
@@ -154,7 +154,7 @@ var UserService = (function () {
     };
     UserService.prototype.createTempPassword = function (username) {
         var _this = this;
-        return this.user_manager.user_model.firstOrNull({ username: username })
+        return this.user_manager.user_model.first({ username: username })
             .then(function (user) {
             if (!user)
                 throw new vineyard_lawn_1.BadRequest("Invalid username", {
@@ -214,7 +214,12 @@ var UserService = (function () {
         if (request.user)
             return Promise.resolve(request.user);
         return this.user_manager.getUser(request.session.user)
-            .then(function (user) { return request.user = sanitize(user); });
+            .then(function (user) {
+            if (user)
+                return request.user = sanitize(user);
+            else
+                return undefined;
+        });
     };
     UserService.prototype.loadValidationHelpers = function (ajv) {
         ajv.addSchema(require('./validation/helpers.json'));

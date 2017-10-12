@@ -102,7 +102,7 @@ var UserManager = (function () {
         });
     };
     UserManager.prototype.getUser = function (id) {
-        return this.User_Model.get(id);
+        return this.User_Model.get(id).exec();
     };
     UserManager.prototype.getSessionCollection = function () {
         return this.sessionCollection;
@@ -136,7 +136,7 @@ var UserManager = (function () {
         var _this = this;
         if (!this.tempPasswordCollection)
             return Promise.resolve(false);
-        return this.tempPasswordCollection.firstOrNull({ user: user.id })
+        return this.tempPasswordCollection.first({ user: user.id })
             .then(function (storedTempPass) {
             if (!storedTempPass)
                 return false;
@@ -157,7 +157,7 @@ var UserManager = (function () {
     };
     UserManager.prototype.createTempPassword = function (username) {
         var _this = this;
-        return this.user_model.firstOrNull({ username: username })
+        return this.user_model.first({ username: username })
             .then(function (user) {
             if (!user)
                 throw new Error("Invalid username: " + username);
@@ -178,7 +178,7 @@ var UserManager = (function () {
                     });
                 }
                 else {
-                    return null;
+                    return Promise.resolve(undefined);
                 }
             });
         });
@@ -193,27 +193,25 @@ var UserManager = (function () {
                     user: user,
                     code: newEmlCode_1
                 })
-                    .then(function () {
-                    return newEmlCode_1;
-                });
+                    .then(function () { return newEmlCode_1; });
             }
             else {
-                return emailCode;
+                return Promise.resolve(emailCode.code);
             }
         });
     };
     UserManager.prototype.verifyEmailCode = function (userId, submittedCode) {
         var _this = this;
-        return this.user_model.firstOrNull({ id: userId })
+        return this.user_model.first({ id: userId }).exec()
             .then(function (user) {
             if (!user)
                 return false;
-            return _this.emailVerificationCollection.firstOrNull({
+            return _this.emailVerificationCollection.first({
                 user: userId
             })
                 .then(function (emailCode) {
                 if (!emailCode || emailCode.code != submittedCode)
-                    return false;
+                    return Promise.resolve(false);
                 return _this.user_model.update(user, {
                     emailVerified: true
                 })
@@ -222,10 +220,10 @@ var UserManager = (function () {
         });
     };
     UserManager.prototype.getEmailCode = function (user) {
-        return this.emailVerificationCollection.firstOrNull({ user: user.id });
+        return this.emailVerificationCollection.first({ user: user.id }).exec();
     };
     UserManager.prototype.getTempPassword = function (user) {
-        return this.tempPasswordCollection.firstOrNull({ user: user.id });
+        return this.tempPasswordCollection.first({ user: user.id }).exec();
     };
     UserManager.prototype.getUserOneTimeCode = function (user) {
         return this.oneTimeCodeCollection.first({ user: user.id, available: true });
@@ -239,7 +237,7 @@ var UserManager = (function () {
     UserManager.prototype.fieldExists = function (key, value) {
         var filter = {};
         filter[key] = value;
-        return this.User_Model.first_or_null(filter)
+        return this.User_Model.first(filter).exec()
             .then(function (user) { return !!user; });
     };
     UserManager.prototype.compareOneTimeCode = function (oneTimeCode, codeRecord) {
