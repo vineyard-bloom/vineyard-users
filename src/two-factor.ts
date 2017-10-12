@@ -1,5 +1,6 @@
 import {Response_Generator, Bad_Request, create_endpoints, Method, Request} from "vineyard-lawn";
 import {ValidationCompiler} from "../../vineyard-lawn/source/types";
+
 const speakeasy = require("speakeasy")
 
 const window = 2
@@ -15,7 +16,7 @@ export function get_2fa_token(): Response_Generator {
   }
 }
 
-export function verify_2fa_token(secret, token): boolean {
+export function verify_2fa_token(secret: string, token: string): boolean {
   return speakeasy.totp.verify({
     secret: secret,
     encoding: 'base32',
@@ -30,13 +31,13 @@ export function verify_2fa_request(request: Request): string {
   const two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret
 
   if (!two_factor_secret)
-    throw new Bad_Request("Two Factor secret must be generated before verifying.", { key: "no-2-fa" })
+    throw new Bad_Request("Two Factor secret must be generated before verifying.", {key: "no-2-fa"})
 
   if (verify_2fa_token(two_factor_secret, request.data.twoFactorToken || request.data.twoFactor)) {
     return two_factor_secret
   }
 
-  throw new Bad_Request("Invalid Two Factor secret.", { key: "invalid-2fa" })
+  throw new Bad_Request("Invalid Two Factor secret.", {key: "invalid-2fa"})
 }
 
 export function verify_2fa_token_handler(): Response_Generator {
@@ -48,7 +49,7 @@ export function verify_2fa_token_handler(): Response_Generator {
   }
 }
 
-export function verify_token_and_save(user_model): Response_Generator {
+export function verify_token_and_save(user_model: any): Response_Generator {
   return request => {
     const secret = verify_2fa_request(request)
     return user_model.update(request.session.user, {
@@ -95,7 +96,7 @@ export class TwoFactorEndpoints {
   }
 }
 
-export function initializeTwoFactor(server) {
+export function initializeTwoFactor(server: any) {
   const endpoints = new TwoFactorEndpoints(server)
 
   server.createPublicEndpoints([

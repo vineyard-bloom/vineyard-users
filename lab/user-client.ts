@@ -18,7 +18,7 @@ export class UserClient {
 
   prepareTwoFactor(): Promise<string> {
     return this.webClient.get('user/2fa')
-      .then(data => this.webClient.post('user/2fa', {
+      .then((data:any) => this.webClient.post('user/2fa', {
           twoFactor: getTwoFactorToken(data.secret)
         })
           .then(() => this.twoFactorSecret = data.secret)
