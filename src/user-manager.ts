@@ -28,6 +28,12 @@ export interface EmailVerification {
   code: string
 }
 
+interface Onetimecode {
+  user: string
+  code: string
+  available: boolean
+}
+
 export class UserManager {
   db: Sequelize.Sequelize
   User_Model: Collection<User_With_Password>
@@ -36,6 +42,7 @@ export class UserManager {
   private table_keys: Table_Keys;
   tempPasswordCollection: Collection<TempPassword>
   private emailVerificationCollection: Collection<EmailVerification>
+  private oneTimeCodeCollection: Collection<Onetimecode>
 
   constructor(db: Sequelize.Sequelize, settings: Settings) {
     this.db = db;
@@ -96,6 +103,7 @@ export class UserManager {
 
       this.tempPasswordCollection = settings.model.TempPassword
       this.emailVerificationCollection = settings.model.ground.collections.EmailVerification
+      this.oneTimeCodeCollection = settings.model.ground.collections.Onetimecode
     }
   }
 
@@ -145,6 +153,10 @@ export class UserManager {
 
   getUserCollection() {
     return this.user_model
+  }
+
+  getOneTimeCodeCollection() {
+    return this.oneTimeCodeCollection
   }
 
   private validateParameters(request: { username: string }) {
@@ -271,6 +283,10 @@ export class UserManager {
     return this.tempPasswordCollection.first({user: user.id}).exec()
   }
 
+  getUserOneTimeCode(user) {
+    return this.oneTimeCodeCollection.first({user: user.id, available: true})
+  }
+
   private sanitizeRequest(request: any) {
     const check = this.validateParameters(request);
     if (check.valid !== true) {
@@ -283,6 +299,37 @@ export class UserManager {
     filter[key] = value
     return this.User_Model.first(filter).exec()
       .then((user?: User) => !!user)
+  }
+
+  compareOneTimeCode(oneTimeCode, codeRecord) {
+    if(!oneTimeCode || !codeRecord) {
+      return Promise.resolve(false)
+    }
+    return bcrypt.compare(oneTimeCode, codeRecord.code).then(success => {
+      if (!success)
+        return false
+
+      return true
+    })
+  }
+
+  setOneTimeCodeToUnavailable(oneTimeCode) {
+    return this.oneTimeCodeCollection.first({ code: oneTimeCode}).then(codeRecord =>
+      this.oneTimeCodeCollection.update(oneTimeCode.id, { available: false })
+    )
+  }
+
+  createOneTimeCodeForUser(userId) {
+    const randomNumber = () => Math.floor(Math.random() * 10).toString()
+    const randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber()
+    console.log(randomCode)
+    return bcrypt.hash(randomCode, 10).then(saltedRandomCode =>
+      this.oneTimeCodeCollection.create({
+        user: userId,
+        code: saltedRandomCode,
+        available: true
+      })
+    )
   }
 
   checkUniqueness(user: User, field = 'username') {
