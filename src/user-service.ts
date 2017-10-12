@@ -110,7 +110,7 @@ export class UserService {
       })
   }
 
-  create_login_2fa_handler_with_backup(): lawn.Response_Generator {
+  createLogin2faHandlerWithBackup(): lawn.Response_Generator {
     let currentUser
     return request => this.checkLogin(request)
       .then(user => {
