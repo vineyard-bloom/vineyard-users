@@ -25,8 +25,6 @@ export function verify_2fa_token(secret: string, token: string): boolean {
   })
 }
 
-
-
 export function verify_2fa_request(request: Request): string {
   const two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret
 
