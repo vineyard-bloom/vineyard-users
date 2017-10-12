@@ -116,15 +116,13 @@ export class UserService {
       .then(user => {
         currentUser = user
         if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-          throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
-
+          return this.verify2faOneTimeCode(request, currentUser).then(backupCodeCheck => {
+            if(!backupCodeCheck)
+              throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
+            return this.finishLogin(request, currentUser)
+          })
         return this.finishLogin(request, currentUser)
-      }).catch(err => this.verify2faOneTimeCode(request, currentUser).then(backupCodeCheck => {
-        if(!backupCodeCheck)
-          throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
-
-        return this.finishLogin(request, currentUser)
-      }))
+      })
   }
 
   private verify2faOneTimeCode(request: Request, user): Promise<boolean> {

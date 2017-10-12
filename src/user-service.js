@@ -100,13 +100,13 @@ var UserService = (function () {
             .then(function (user) {
             currentUser = user;
             if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+                return _this.verify2faOneTimeCode(request, currentUser).then(function (backupCodeCheck) {
+                    if (!backupCodeCheck)
+                        throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+                    return _this.finishLogin(request, currentUser);
+                });
             return _this.finishLogin(request, currentUser);
-        }).catch(function (err) { return _this.verify2faOneTimeCode(request, currentUser).then(function (backupCodeCheck) {
-            if (!backupCodeCheck)
-                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
-            return _this.finishLogin(request, currentUser);
-        }); }); };
+        }); };
     };
     UserService.prototype.verify2faOneTimeCode = function (request, user) {
         var _this = this;
