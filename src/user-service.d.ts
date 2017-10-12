@@ -17,6 +17,7 @@ export declare class UserService {
     login(request: Request): any;
     create_login_handler(): lawn.Response_Generator;
     create_login_2fa_handler(): lawn.Response_Generator;
+    create_login_2fa_handler_with_backup(): lawn.Response_Generator;
     private verify2faOneTimeCode(request);
     logout(request: Request): Promise<{}>;
     createLogoutHandler(): lawn.Response_Generator;

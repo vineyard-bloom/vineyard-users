@@ -102,20 +102,35 @@ export class UserService {
   create_login_2fa_handler(): lawn.Response_Generator {
     return request => this.checkLogin(request)
       .then(user => {
-        return this.verify2faOneTimeCode(request).then(backupCodeCheck => {
-          if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor) && !backupCodeCheck)
-            throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
+        if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+          throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
 
-          
-          return this.finishLogin(request, user)
-        })
+        return this.finishLogin(request, user)
       })
+  }
+
+  create_login_2fa_handler_with_backup(): lawn.Response_Generator {
+    let currentUser
+    return request => this.checkLogin(request)
+      .then(user => {
+        currentUser = user
+        if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+          throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
+
+        return this.finishLogin(request, currentUser)
+      }).catch(err => this.verify2faOneTimeCode(request).then(backupCodeCheck => {
+        if(!backupCodeCheck)
+          throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
+
+        return this.finishLogin(request, currentUser)
+      }))
   }
 
   private verify2faOneTimeCode(request: Request): Promise<boolean> {
     return this.user_manager.User_Model.first({ username: request.data.username }).then(user =>
-      this.user_manager.getUserOneTimeCode(user).then(code => {
-        if (!this.user_manager.compareOneTimeCode(request.data.twoFactorToken, code)) {
+      this.user_manager.getUserOneTimeCode(user).then(code =>
+        this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(passFail => {
+        if (!passFail) {
           return false
         }
         return this.user_manager.setOneTimeCodeToUnavailable(code).then(() =>

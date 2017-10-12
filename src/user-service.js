@@ -88,22 +88,37 @@ var UserService = (function () {
         var _this = this;
         return function (request) { return _this.checkLogin(request)
             .then(function (user) {
-            return _this.verify2faOneTimeCode(request).then(function (backupCodeCheck) {
-                if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor) && !backupCodeCheck)
-                    throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
-                return _this.finishLogin(request, user);
-            });
+            if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+            return _this.finishLogin(request, user);
         }); };
+    };
+    UserService.prototype.create_login_2fa_handler_with_backup = function () {
+        var _this = this;
+        var currentUser;
+        return function (request) { return _this.checkLogin(request)
+            .then(function (user) {
+            currentUser = user;
+            if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+            return _this.finishLogin(request, currentUser);
+        }).catch(function (err) { return _this.verify2faOneTimeCode(request).then(function (backupCodeCheck) {
+            if (!backupCodeCheck)
+                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+            return _this.finishLogin(request, currentUser);
+        }); }); };
     };
     UserService.prototype.verify2faOneTimeCode = function (request) {
         var _this = this;
-        return this.user_manager.getUserCollection.first({ username: request.data.username }).then(function (user) {
+        return this.user_manager.User_Model.first({ username: request.data.username }).then(function (user) {
             return _this.user_manager.getUserOneTimeCode(user).then(function (code) {
-                if (!_this.user_manager.compareOneTimeCode(request.data.twoFactorToken, code)) {
-                    return false;
-                }
-                return _this.user_manager.setOneTimeCodeToUnavailable(code).then(function () {
-                    return true;
+                return _this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(function (passFail) {
+                    if (!passFail) {
+                        return false;
+                    }
+                    return _this.user_manager.setOneTimeCodeToUnavailable(code).then(function () {
+                        return true;
+                    });
                 });
             });
         });

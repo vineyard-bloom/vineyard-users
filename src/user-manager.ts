@@ -304,8 +304,11 @@ export class UserManager {
   }
 
 
-  compareOneTimeCode(oneTimeCode, code) {
-    return bcrypt.compare(oneTimeCode, code).then(success => {
+  compareOneTimeCode(oneTimeCode, codeRecord) {
+    if(!oneTimeCode || !codeRecord) {
+      return Promise.resolve(false)
+    }
+    return bcrypt.compare(oneTimeCode, codeRecord.code).then(success => {
       if (!success)
         return false
 
@@ -314,7 +317,7 @@ export class UserManager {
   }
 
   setOneTimeCodeToUnavailable(oneTimeCode) {
-    return this.oneTimeCodeCollection.get({ code: oneTimeCode}).then(codeRecord =>
+    return this.oneTimeCodeCollection.first({ code: oneTimeCode}).then(codeRecord =>
       this.oneTimeCodeCollection.update(oneTimeCode.id, { available: false })
     )
   }
@@ -322,8 +325,8 @@ export class UserManager {
   createOneTimeCodeForUser(userId) {
     const randomNumber = () => Math.floor(Math.random() * 10).toString()
     const randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber()
-    const saltedRandomCode =
-    bcrypt.hash(randomCode, 10).then(saltedRandomCode =>
+    console.log(randomCode)
+    return bcrypt.hash(randomCode, 10).then(saltedRandomCode =>
       this.oneTimeCodeCollection.create({
         user: userId,
         code: saltedRandomCode,

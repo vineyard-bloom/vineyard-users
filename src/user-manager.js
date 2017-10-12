@@ -242,8 +242,11 @@ var UserManager = (function () {
         return this.User_Model.first_or_null(filter)
             .then(function (user) { return !!user; });
     };
-    UserManager.prototype.compareOneTimeCode = function (oneTimeCode, code) {
-        return bcrypt.compare(oneTimeCode, code).then(function (success) {
+    UserManager.prototype.compareOneTimeCode = function (oneTimeCode, codeRecord) {
+        if (!oneTimeCode || !codeRecord) {
+            return Promise.resolve(false);
+        }
+        return bcrypt.compare(oneTimeCode, codeRecord.code).then(function (success) {
             if (!success)
                 return false;
             return true;
@@ -251,7 +254,7 @@ var UserManager = (function () {
     };
     UserManager.prototype.setOneTimeCodeToUnavailable = function (oneTimeCode) {
         var _this = this;
-        return this.oneTimeCodeCollection.get({ code: oneTimeCode }).then(function (codeRecord) {
+        return this.oneTimeCodeCollection.first({ code: oneTimeCode }).then(function (codeRecord) {
             return _this.oneTimeCodeCollection.update(oneTimeCode.id, { available: false });
         });
     };
@@ -259,7 +262,8 @@ var UserManager = (function () {
         var _this = this;
         var randomNumber = function () { return Math.floor(Math.random() * 10).toString(); };
         var randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber();
-        var saltedRandomCode = bcrypt.hash(randomCode, 10).then(function (saltedRandomCode) {
+        console.log(randomCode);
+        return bcrypt.hash(randomCode, 10).then(function (saltedRandomCode) {
             return _this.oneTimeCodeCollection.create({
                 user: userId,
                 code: saltedRandomCode,
