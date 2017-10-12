@@ -19,7 +19,7 @@ export declare class UserService {
     create_login_handler(): lawn.Response_Generator;
     create_login_2fa_handler(): lawn.Response_Generator;
     createLogin2faHandlerWithBackup(): lawn.Response_Generator;
-    private verify2faOneTimeCode(request);
+    private verify2faOneTimeCode(request, user);
     logout(request: Request): Promise<{}>;
     createLogoutHandler(): lawn.Response_Generator;
     create_logout_handler(): lawn.Response_Generator;

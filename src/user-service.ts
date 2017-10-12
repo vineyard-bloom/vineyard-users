@@ -119,7 +119,7 @@ export class UserService {
           throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
 
         return this.finishLogin(request, currentUser)
-      }).catch(err => this.verify2faOneTimeCode(request).then(backupCodeCheck => {
+      }).catch(err => this.verify2faOneTimeCode(request, currentUser).then(backupCodeCheck => {
         if(!backupCodeCheck)
           throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
 
@@ -127,11 +127,10 @@ export class UserService {
       }))
   }
 
-  private verify2faOneTimeCode(request: Request): Promise<boolean> {
-    return this.user_manager.User_Model.first({ username: request.data.username }).then(user =>
-      this.user_manager.getUserOneTimeCode(user).then(code =>
-        this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(passFail => {
-        if (!passFail) {
+  private verify2faOneTimeCode(request: Request, user): Promise<boolean> {
+      return this.user_manager.getUserOneTimeCode(user).then(code =>
+        this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
+        if (!pass) {
           return false
         }
         return this.user_manager.setOneTimeCodeToUnavailable(code).then(() =>
