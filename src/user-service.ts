@@ -143,7 +143,7 @@ export class UserService {
   }
 
   createTempPassword(username: string): Promise<any> {
-    return this.user_manager.user_model.firstOrNull({username: username})
+    return this.user_manager.user_model.first({username: username})
       .then(user => {
         if (!user)
           throw new BadRequest(

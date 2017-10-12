@@ -173,7 +173,7 @@ export class UserManager {
     if (!this.tempPasswordCollection)
       return Promise.resolve(false)
 
-    return this.tempPasswordCollection.firstOrNull({user: user.id})
+    return this.tempPasswordCollection.first({user: user.id})
       .then((storedTempPass: any) => {
         if (!storedTempPass)
           return false
@@ -197,7 +197,7 @@ export class UserManager {
   }
 
   createTempPassword(username: string): Promise<any> {
-    return this.user_model.firstOrNull({username: username})
+    return this.user_model.first({username: username})
       .then((user?: User) => {
         if (!user)
           throw new Error("Invalid username: " + username)
@@ -242,12 +242,12 @@ export class UserManager {
   }
 
   verifyEmailCode(userId: string, submittedCode: string): Promise<boolean> {
-    return this.user_model.firstOrNull({id: userId})
+    return this.user_model.first({id: userId}).exec()
       .then(user => {
         if (!user)
-          return Promise.resolve(false)
+          return false
 
-        return this.emailVerificationCollection.firstOrNull({
+        return this.emailVerificationCollection.first({
           user: userId
         })
           .then(emailCode => {
@@ -264,11 +264,11 @@ export class UserManager {
   }
 
   getEmailCode(user: User) {
-    return this.emailVerificationCollection.firstOrNull({user: user.id}).exec()
+    return this.emailVerificationCollection.first({user: user.id}).exec()
   }
 
   getTempPassword(user: User) {
-    return this.tempPasswordCollection.firstOrNull({user: user.id}).exec()
+    return this.tempPasswordCollection.first({user: user.id}).exec()
   }
 
   private sanitizeRequest(request: any) {
@@ -281,7 +281,7 @@ export class UserManager {
   fieldExists(key: string, value: any): Promise<boolean> {
     const filter: any = {}
     filter[key] = value
-    return this.User_Model.first_or_null(filter).exec()
+    return this.User_Model.first(filter).exec()
       .then((user?: User) => !!user)
   }
 
