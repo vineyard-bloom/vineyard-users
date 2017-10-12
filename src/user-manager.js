@@ -62,7 +62,20 @@ var UserManager = (function () {
                             "type": "string"
                         }
                     }
-                }
+                },
+                "Onetimecode": {
+                    "properties": {
+                        "user": {
+                            "type": "User"
+                        },
+                        "code": {
+                            "type": "string"
+                        },
+                        "available": {
+                            "type": "bool"
+                        }
+                    }
+                },
             });
             this.tempPasswordCollection = settings.model.TempPassword;
             this.emailVerificationCollection = settings.model.ground.collections.EmailVerification;

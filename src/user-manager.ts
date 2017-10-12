@@ -98,7 +98,20 @@ export class UserManager {
               "type": "string"
             }
           }
-        }
+        },
+        "Onetimecode": {
+          "properties": {
+            "user": {
+              "type": "User"
+            },
+            "code": {
+              "type": "string"
+            },
+            "available": {
+              "type": "bool"
+            }
+          }
+        },
       })
 
       this.tempPasswordCollection = settings.model.TempPassword
