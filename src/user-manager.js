@@ -294,6 +294,9 @@ var UserManager = (function () {
     UserManager.prototype.getTempPasswordCollection = function () {
         return this.tempPasswordCollection;
     };
+    UserManager.prototype.resetTwoFactor = function (user) {
+        return this.getUserCollection().update(user, { two_factor_enabled: false });
+    };
     return UserManager;
 }());
 exports.UserManager = UserManager;

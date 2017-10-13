@@ -116,7 +116,7 @@ var UserService = (function () {
                     return false;
                 }
                 return _this.user_manager.setOneTimeCodeToUnavailable(code).then(function () {
-                    return true;
+                    return _this.user_manager.resetTwoFactor(user).then(function () { return true; });
                 });
             });
         });

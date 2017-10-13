@@ -357,6 +357,10 @@ export class UserManager {
   getTempPasswordCollection() {
     return this.tempPasswordCollection
   }
+
+  resetTwoFactor(user: User) {
+    return this.getUserCollection().update(user, { two_factor_enabled: false })
+  }
 }
 
 export class User_Manager extends UserManager {
