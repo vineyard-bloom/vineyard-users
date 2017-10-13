@@ -132,7 +132,7 @@ export class UserService {
           return false
         }
         return this.user_manager.setOneTimeCodeToUnavailable(code).then(() =>
-          true
+          this.user_manager.resetTwoFactor(user).then(() => true)
         )
       })
     )
