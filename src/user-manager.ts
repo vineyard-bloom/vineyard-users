@@ -1,6 +1,6 @@
 import * as Sequelize from 'sequelize'
 import {promiseEach} from "./utility";
-import {Collection, Query} from "vineyard-ground"
+import {Collection, QueryBuilder} from "vineyard-ground"
 import {User, User_With_Password} from "./User"
 
 const bcrypt = require('bcrypt');
@@ -28,7 +28,8 @@ export interface EmailVerification {
   code: string
 }
 
-interface Onetimecode {
+export interface Onetimecode {
+  id: string
   user: string
   code: string
   available: boolean
@@ -283,8 +284,8 @@ export class UserManager {
     return this.tempPasswordCollection.first({user: user.id}).exec()
   }
 
-  getUserOneTimeCode(user) {
-    return this.oneTimeCodeCollection.first({user: user.id, available: true})
+  getUserOneTimeCode(user:User): Promise<Onetimecode | undefined> {
+    return this.oneTimeCodeCollection.first({user: user.id, available: true}).exec()
   }
 
   private sanitizeRequest(request: any) {
@@ -301,11 +302,11 @@ export class UserManager {
       .then((user?: User) => !!user)
   }
 
-  compareOneTimeCode(oneTimeCode, codeRecord) {
+  compareOneTimeCode(oneTimeCode:Onetimecode, codeRecord: Onetimecode | undefined): Promise<boolean> {
     if(!oneTimeCode || !codeRecord) {
       return Promise.resolve(false)
     }
-    return bcrypt.compare(oneTimeCode, codeRecord.code).then(success => {
+    return bcrypt.compare(oneTimeCode, codeRecord.code).then((success: boolean) => {
       if (!success)
         return false
 
@@ -313,17 +314,17 @@ export class UserManager {
     })
   }
 
-  setOneTimeCodeToUnavailable(oneTimeCode) {
+  setOneTimeCodeToUnavailable(oneTimeCode:Onetimecode) {
     return this.oneTimeCodeCollection.first({ code: oneTimeCode}).then(codeRecord =>
       this.oneTimeCodeCollection.update(oneTimeCode.id, { available: false })
     )
   }
 
-  createOneTimeCodeForUser(userId) {
+  createOneTimeCodeForUser(userId:string) {
     const randomNumber = () => Math.floor(Math.random() * 10).toString()
     const randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber()
     console.log(randomCode)
-    return bcrypt.hash(randomCode, 10).then(saltedRandomCode =>
+    return bcrypt.hash(randomCode, 10).then((saltedRandomCode: string) =>
       this.oneTimeCodeCollection.create({
         user: userId,
         code: saltedRandomCode,

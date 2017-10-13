@@ -111,7 +111,7 @@ export class UserService {
   }
 
   createLogin2faHandlerWithBackup(): lawn.Response_Generator {
-    let currentUser
+    let currentUser: User_With_Password
     return request => this.checkLogin(request)
       .then(user => {
         currentUser = user
@@ -120,7 +120,7 @@ export class UserService {
 
         return this.finishLogin(request, currentUser)
       }).catch(err => this.verify2faOneTimeCode(request).then(backupCodeCheck => {
-        if(!backupCodeCheck)
+        if (!backupCodeCheck)
           throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
 
         return this.finishLogin(request, currentUser)
@@ -128,22 +128,30 @@ export class UserService {
   }
 
   private verify2faOneTimeCode(request: Request): Promise<boolean> {
-    return this.user_manager.User_Model.first({ username: request.data.username }).then(user =>
-      this.user_manager.getUserOneTimeCode(user).then(code =>
-        this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(passFail => {
-        if (!passFail) {
-          return false
-        }
-        return this.user_manager.setOneTimeCodeToUnavailable(code).then(() =>
-          true
-        )
+    return this.user_manager.User_Model.first({username: request.data.username})
+      .then(user => {
+        if (!user)
+          throw new BadRequest("Invalid username")
+
+        return this.user_manager.getUserOneTimeCode(user).then(code => {
+          if (!code)
+            return false
+
+          return this.user_manager.compareOneTimeCode(request.data.twoFactor, code)
+            .then(passFail => {
+              if (!passFail) {
+                return false
+              }
+              return this.user_manager.setOneTimeCodeToUnavailable(code)
+                .then(() => true)
+            })
+        })
       })
-    )
   }
 
   logout(request: Request) {
     if (!request.session.user)
-      throw new Bad_Request('Already logged out.', {key: 'already-logged-out'})
+      throw new BadRequest('Already logged out.', {key: 'already-logged-out'})
 
     request.session.user = null
     return Promise.resolve({})
@@ -165,7 +173,7 @@ export class UserService {
         return this.user_manager.getUser(request.session.user)
           .then(user => {
             if (!user)
-              throw new Bad_Request("Invalid user ID", {key: 'invalid-user-id'})
+              throw new BadRequest("Invalid user ID", {key: 'invalid-user-id'})
 
             return sanitize(user)
           })
