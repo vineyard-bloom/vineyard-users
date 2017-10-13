@@ -99,7 +99,20 @@ export class UserManager {
               "type": "string"
             }
           }
-        }
+        },
+        "Onetimecode": {
+          "properties": {
+            "user": {
+              "type": "User"
+            },
+            "code": {
+              "type": "string"
+            },
+            "available": {
+              "type": "bool"
+            }
+          }
+        },
       })
 
       this.tempPasswordCollection = settings.model.TempPassword
@@ -344,6 +357,10 @@ export class UserManager {
 
   getTempPasswordCollection() {
     return this.tempPasswordCollection
+  }
+
+  resetTwoFactor(user: User) {
+    return this.getUserCollection().update(user, { two_factor_enabled: false })
   }
 }
 

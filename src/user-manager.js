@@ -62,7 +62,20 @@ var UserManager = (function () {
                             "type": "string"
                         }
                     }
-                }
+                },
+                "Onetimecode": {
+                    "properties": {
+                        "user": {
+                            "type": "User"
+                        },
+                        "code": {
+                            "type": "string"
+                        },
+                        "available": {
+                            "type": "bool"
+                        }
+                    }
+                },
             });
             this.tempPasswordCollection = settings.model.TempPassword;
             this.emailVerificationCollection = settings.model.ground.collections.EmailVerification;
@@ -226,7 +239,7 @@ var UserManager = (function () {
         return this.tempPasswordCollection.first({ user: user.id }).exec();
     };
     UserManager.prototype.getUserOneTimeCode = function (user) {
-        return this.oneTimeCodeCollection.first({ user: user.id, available: true });
+        return this.oneTimeCodeCollection.first({ user: user.id, available: true }).exec();
     };
     UserManager.prototype.sanitizeRequest = function (request) {
         var check = this.validateParameters(request);
@@ -280,6 +293,9 @@ var UserManager = (function () {
     };
     UserManager.prototype.getTempPasswordCollection = function () {
         return this.tempPasswordCollection;
+    };
+    UserManager.prototype.resetTwoFactor = function (user) {
+        return this.getUserCollection().update(user, { two_factor_enabled: false });
     };
     return UserManager;
 }());

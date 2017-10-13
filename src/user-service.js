@@ -100,32 +100,31 @@ var UserService = (function () {
             .then(function (user) {
             currentUser = user;
             if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
-            return _this.finishLogin(request, currentUser);
-        }).catch(function (err) { return _this.verify2faOneTimeCode(request).then(function (backupCodeCheck) {
-            if (!backupCodeCheck)
-                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
-            return _this.finishLogin(request, currentUser);
-        }); }); };
-    };
-    UserService.prototype.verify2faOneTimeCode = function (request) {
-        var _this = this;
-        return this.user_manager.User_Model.first({ username: request.data.username }).then(function (user) {
-            return _this.user_manager.getUserOneTimeCode(user).then(function (code) {
-                return _this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(function (passFail) {
-                    if (!passFail) {
-                        return false;
-                    }
-                    return _this.user_manager.setOneTimeCodeToUnavailable(code).then(function () {
-                        return true;
-                    });
+                return _this.verify2faOneTimeCode(request, currentUser).then(function (backupCodeCheck) {
+                    if (!backupCodeCheck)
+                        throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+                    return _this.finishLogin(request, currentUser);
                 });
+            return _this.finishLogin(request, currentUser);
+        }); };
+    };
+    UserService.prototype.verify2faOneTimeCode = function (request, user) {
+        var _this = this;
+        return this.user_manager.getUserOneTimeCode(user).then(function (code) {
+            if (!code)
+                return false;
+            return _this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(function (pass) {
+                if (!pass) {
+                    return false;
+                }
+                return _this.user_manager.setOneTimeCodeToUnavailable(code)
+                    .then(function () { return _this.user_manager.resetTwoFactor(user).then(function () { return true; }); });
             });
         });
     };
     UserService.prototype.logout = function (request) {
         if (!request.session.user)
-            throw new vineyard_lawn_1.Bad_Request('Already logged out.', { key: 'already-logged-out' });
+            throw new vineyard_lawn_1.BadRequest('Already logged out.', { key: 'already-logged-out' });
         request.session.user = null;
         return Promise.resolve({});
     };
@@ -146,7 +145,7 @@ var UserService = (function () {
                 return _this.user_manager.getUser(request.session.user)
                     .then(function (user) {
                     if (!user)
-                        throw new vineyard_lawn_1.Bad_Request("Invalid user ID", { key: 'invalid-user-id' });
+                        throw new vineyard_lawn_1.BadRequest("Invalid user ID", { key: 'invalid-user-id' });
                     return sanitize(user);
                 });
             }
