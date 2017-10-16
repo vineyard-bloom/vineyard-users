@@ -1,15 +1,10 @@
 /// <reference types="sequelize" />
 import * as Sequelize from 'sequelize';
 import { Collection } from "vineyard-ground";
-import { User, User_With_Password } from "./User";
-export interface Table_Keys {
-    id: string;
-    username: string;
-    password: string;
-}
+import { User, UserWithPassword } from "./User";
 export interface Settings {
     user_model: any;
-    table_keys?: any;
+    tableKeys?: any;
     model: any;
 }
 export interface TempPassword {
@@ -29,10 +24,10 @@ export interface Onetimecode {
 }
 export declare class UserManager {
     db: Sequelize.Sequelize;
-    User_Model: Collection<User_With_Password>;
-    user_model: Collection<User_With_Password>;
+    UserModel: Collection<UserWithPassword>;
+    User_Model: Collection<UserWithPassword>;
+    user_model: Collection<UserWithPassword>;
     private sessionCollection;
-    private table_keys;
     tempPasswordCollection: Collection<TempPassword>;
     private emailVerificationCollection;
     private oneTimeCodeCollection;
@@ -44,28 +39,29 @@ export declare class UserManager {
     createUser(fields: any, uniqueField?: string | string[]): Promise<any>;
     getUser(id: {
         id: string;
-    } | string): Promise<User_With_Password | undefined>;
+    } | string): Promise<UserWithPassword | undefined>;
     getSessionCollection(): any;
-    getUserCollection(): Collection<User_With_Password>;
+    getUserCollection(): Collection<UserWithPassword>;
     getOneTimeCodeCollection(): Collection<Onetimecode>;
-    private validateParameters(request);
     private tempPasswordHasExpired(tempPassword);
     private emailCodeHasExpired(emailCode);
     matchTempPassword(user: User, password: string): Promise<boolean>;
-    createTempPassword(username: string): Promise<any>;
+    getUserFromUsername(username: string): Promise<UserWithPassword>;
+    getUserFromEmail(email: string): Promise<UserWithPassword>;
+    private _createTempPassword(user);
+    createTempPassword(username: string | User): Promise<any>;
     createEmailCode(user: User): Promise<any>;
     verifyEmailCode(userId: string, submittedCode: string): Promise<boolean>;
     getEmailCode(user: User): Promise<EmailVerification | undefined>;
     getTempPassword(user: User): Promise<TempPassword | undefined>;
     getUserOneTimeCode(user: User): Promise<Onetimecode | undefined>;
-    private sanitizeRequest(request);
     fieldExists(key: string, value: any): Promise<boolean>;
     compareOneTimeCode(oneTimeCode: Onetimecode, codeRecord: Onetimecode | undefined): Promise<boolean>;
     setOneTimeCodeToUnavailable(oneTimeCode: Onetimecode): Promise<Onetimecode>;
     createOneTimeCodeForUser(userId: string): any;
     checkUniqueness(user: User, field?: string): Promise<void>;
     getTempPasswordCollection(): Collection<TempPassword>;
-    resetTwoFactor(user: User): Promise<User_With_Password>;
+    resetTwoFactor(user: User): Promise<UserWithPassword>;
 }
 export declare class User_Manager extends UserManager {
     constructor(db: Sequelize.Sequelize, settings: Settings);

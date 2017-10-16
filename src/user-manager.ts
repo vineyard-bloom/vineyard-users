@@ -1,19 +1,14 @@
 import * as Sequelize from 'sequelize'
 import {promiseEach} from "./utility";
 import {Collection, QueryBuilder} from "vineyard-ground"
-import {User, User_With_Password} from "./User"
+import {User, UserWithPassword} from "./User"
+import {BadRequest} from "vineyard-lawn/source/errors";
 
 const bcrypt = require('bcrypt');
 
-export interface Table_Keys {
-  id: string
-  username: string
-  password: string
-}
-
 export interface Settings {
   user_model: any
-  table_keys?: any
+  tableKeys?: any
   model: any
 }
 
@@ -37,10 +32,10 @@ export interface Onetimecode {
 
 export class UserManager {
   db: Sequelize.Sequelize
-  User_Model: Collection<User_With_Password>
-  user_model: Collection<User_With_Password>
+  UserModel: Collection<UserWithPassword>
+  User_Model: Collection<UserWithPassword> // deprecated
+  user_model: Collection<UserWithPassword> // deprecated
   private sessionCollection: any;
-  private table_keys: Table_Keys;
   tempPasswordCollection: Collection<TempPassword>
   private emailVerificationCollection: Collection<EmailVerification>
   private oneTimeCodeCollection: Collection<Onetimecode>
@@ -53,13 +48,7 @@ export class UserManager {
     if (!settings.user_model)
       throw new Error("Missing user_model settings argument.");
 
-    this.table_keys = settings.table_keys || {
-      id: "id",
-      username: "username,",
-      password: "password"
-    }
-
-    this.User_Model = this.user_model = settings.user_model
+    this.UserModel = this.User_Model = this.user_model = settings.user_model
 
     this.sessionCollection = db.define('session', {
         sid: {
@@ -68,7 +57,7 @@ export class UserManager {
         },
         user: Sequelize.UUID,
         expires: Sequelize.DATE,
-        data: Sequelize.TEXT
+        data: Sequelize.TEXT // deprecated
       }, {
         underscored: true,
         createdAt: 'created',
@@ -157,7 +146,7 @@ export class UserManager {
       })
   }
 
-  getUser(id: { id: string } | string): Promise<User_With_Password | undefined> {
+  getUser(id: { id: string } | string): Promise<UserWithPassword | undefined> {
     return this.User_Model.get(id).exec()
   }
 
@@ -171,18 +160,6 @@ export class UserManager {
 
   getOneTimeCodeCollection() {
     return this.oneTimeCodeCollection
-  }
-
-  private validateParameters(request: { username: string }) {
-    const invalidUserChars = request.username.match(/[^\w_]/g);
-    const invalidPassChars = request.username.match(/[^\w_\-?!]/g);
-    return {
-      valid: (!invalidUserChars && !invalidPassChars),
-      invalidChars: {
-        username: invalidUserChars,
-        password: invalidPassChars
-      }
-    }
   }
 
   private tempPasswordHasExpired(tempPassword: TempPassword): boolean {
@@ -222,33 +199,57 @@ export class UserManager {
       })
   }
 
-  createTempPassword(username: string): Promise<any> {
-    return this.user_model.first({username: username})
-      .then((user?: User) => {
+  getUserFromUsername(username: string): Promise<UserWithPassword> {
+    return this.UserModel.first({username: username})
+      .then(user => {
         if (!user)
-          throw new Error("Invalid username: " + username)
+          throw new BadRequest("Invalid username: " + username)
 
-        return this.getTempPassword(user)
-          .then(tempPassword => {
-            if (!tempPassword) {
-              const passwordString = Math.random().toString(36).slice(2)
-              return this.hashPassword(passwordString)
-                .then(hashedPassword => this.tempPasswordCollection.create({
-                    user: user,
-                    password: hashedPassword
-                  })
-                )
-                .then(() => {
-                  return {
-                    password: passwordString,
-                    username: user.username
-                  }
-                })
-            } else {
-              return Promise.resolve(undefined)
-            }
-          })
+        return user
       })
+  }
+
+  getUserFromEmail(email: string): Promise<UserWithPassword> {
+    return this.UserModel.first({email: email})
+      .then(user => {
+        if (!user)
+          throw new BadRequest("Invalid email: " + email)
+
+        return user
+      })
+  }
+
+  private _createTempPassword(user: User): Promise<any> {
+    return this.getTempPassword(user)
+      .then(tempPassword => {
+        if (!tempPassword) {
+          const passwordString = Math.random().toString(36).slice(2)
+          return this.hashPassword(passwordString)
+            .then(hashedPassword => this.tempPasswordCollection.create({
+                user: user,
+                password: hashedPassword
+              })
+            )
+            .then(() => {
+              return {
+                password: passwordString,
+                username: user.username
+              }
+            })
+        } else {
+          return Promise.resolve(undefined)
+        }
+      })
+  }
+
+  createTempPassword(username: string | User): Promise<any> {
+    if (typeof username == 'string') {
+      return this.getUserFromUsername(username)
+        .then(user => this._createTempPassword(user))
+    }
+    else {
+      return this._createTempPassword(username)
+    }
   }
 
   createEmailCode(user: User): Promise<any> {
@@ -297,15 +298,8 @@ export class UserManager {
     return this.tempPasswordCollection.first({user: user.id}).exec()
   }
 
-  getUserOneTimeCode(user:User): Promise<Onetimecode | undefined> {
+  getUserOneTimeCode(user: User): Promise<Onetimecode | undefined> {
     return this.oneTimeCodeCollection.first({user: user.id, available: true}).exec()
-  }
-
-  private sanitizeRequest(request: any) {
-    const check = this.validateParameters(request);
-    if (check.valid !== true) {
-      throw new Error(`Parameters contain the following invalid characters ${check.invalidChars}`)
-    }
   }
 
   fieldExists(key: string, value: any): Promise<boolean> {
@@ -315,8 +309,8 @@ export class UserManager {
       .then((user?: User) => !!user)
   }
 
-  compareOneTimeCode(oneTimeCode:Onetimecode, codeRecord: Onetimecode | undefined): Promise<boolean> {
-    if(!oneTimeCode || !codeRecord) {
+  compareOneTimeCode(oneTimeCode: Onetimecode, codeRecord: Onetimecode | undefined): Promise<boolean> {
+    if (!oneTimeCode || !codeRecord) {
       return Promise.resolve(false)
     }
     return bcrypt.compare(oneTimeCode, codeRecord.code).then((success: boolean) => {
@@ -327,13 +321,13 @@ export class UserManager {
     })
   }
 
-  setOneTimeCodeToUnavailable(oneTimeCode:Onetimecode) {
-    return this.oneTimeCodeCollection.first({ code: oneTimeCode}).then(codeRecord =>
-      this.oneTimeCodeCollection.update(oneTimeCode.id, { available: false })
+  setOneTimeCodeToUnavailable(oneTimeCode: Onetimecode) {
+    return this.oneTimeCodeCollection.first({code: oneTimeCode}).then(codeRecord =>
+      this.oneTimeCodeCollection.update(oneTimeCode.id, {available: false})
     )
   }
 
-  createOneTimeCodeForUser(userId:string) {
+  createOneTimeCodeForUser(userId: string) {
     const randomNumber = () => Math.floor(Math.random() * 10).toString()
     const randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber()
     console.log(randomCode)
@@ -360,7 +354,7 @@ export class UserManager {
   }
 
   resetTwoFactor(user: User) {
-    return this.getUserCollection().update(user, { two_factor_enabled: false })
+    return this.getUserCollection().update(user, {two_factor_enabled: false})
   }
 }
 

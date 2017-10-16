@@ -60,21 +60,28 @@ var UserService = (function () {
     UserService.prototype.checkPassword = function (password, hash) {
         return bcrypt.compare(password, hash);
     };
-    UserService.prototype.checkLogin = function (request) {
+    UserService.prototype._checkLogin = function (filter, password) {
         var _this = this;
-        var _a = request.data, reqUsername = _a.username, reqPass = _a.password, reqEmail = _a.email;
-        var queryObj = reqUsername
-            ? { username: reqUsername }
-            : { email: reqEmail };
-        return this.userManager.User_Model.first(queryObj)
+        return this.userManager.User_Model.first(filter)
             .then(function (user) {
             if (!user)
                 throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
-            return bcrypt.compare(reqPass, user.password)
+            return bcrypt.compare(password, user.password)
                 .then(function (success) { return success
                 ? user
-                : _this.checkTempPassword(user, reqPass); });
+                : _this.checkTempPassword(user, password); });
         });
+    };
+    UserService.prototype.checkUsernameOrEmailLogin = function (request) {
+        var data = request.data;
+        var filter = data.username
+            ? { username: data.username }
+            : { email: data.email };
+        return this._checkLogin(filter, data.password);
+    };
+    UserService.prototype.checkEmailLogin = function (request) {
+        var data = request.data;
+        return this._checkLogin({ email: data.email }, data.password);
     };
     UserService.prototype.finishLogin = function (request, user) {
         request.session.user = user.id;
@@ -82,26 +89,29 @@ var UserService = (function () {
     };
     UserService.prototype.login = function (request) {
         var _this = this;
-        return this.checkLogin(request)
+        return this.checkUsernameOrEmailLogin(request)
             .then(function (user) { return _this.finishLogin(request, user); });
     };
     UserService.prototype.create_login_handler = function () {
         var _this = this;
         return function (request) { return _this.login(request); };
     };
+    UserService.prototype.checkTwoFactor = function (user, request) {
+        if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+            throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+    };
     UserService.prototype.create_login_2fa_handler = function () {
         var _this = this;
-        return function (request) { return _this.checkLogin(request)
+        return function (request) { return _this.checkUsernameOrEmailLogin(request)
             .then(function (user) {
-            if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-                throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+            _this.checkTwoFactor(user, request);
             return _this.finishLogin(request, user);
         }); };
     };
     UserService.prototype.createLogin2faHandlerWithBackup = function () {
         var _this = this;
         var currentUser;
-        return function (request) { return _this.checkLogin(request)
+        return function (request) { return _this.checkUsernameOrEmailLogin(request)
             .then(function (user) {
             currentUser = user;
             if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))

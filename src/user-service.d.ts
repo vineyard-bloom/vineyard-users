@@ -16,10 +16,13 @@ export declare class UserService {
     constructor(app: express.Application, userManager: UserManager, settings: ServiceSettings, sessionStore?: any);
     private checkTempPassword(user, password);
     checkPassword(password: string, hash: string): Promise<boolean>;
-    private checkLogin(request);
+    private _checkLogin(filter, password);
+    private checkUsernameOrEmailLogin(request);
+    private checkEmailLogin(request);
     private finishLogin(request, user);
     login(request: Request): Promise<User>;
     create_login_handler(): lawn.Response_Generator;
+    checkTwoFactor(user: User, request: Request): void;
     create_login_2fa_handler(): lawn.Response_Generator;
     createLogin2faHandlerWithBackup(): lawn.Response_Generator;
     private verify2faOneTimeCode(request, user);

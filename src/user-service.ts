@@ -5,7 +5,7 @@ import {Method, HTTP_Error, Bad_Request, Request, BadRequest} from 'vineyard-law
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as two_factor from './two-factor'
-import {User, User_With_Password} from "./User";
+import {User, UserWithPassword} from "./User";
 
 const bcrypt = require('bcrypt')
 
@@ -16,7 +16,7 @@ export interface ServiceSettings {
 
 export type Service_Settings = ServiceSettings
 
-function sanitize(user: User_With_Password): User {
+function sanitize(user: UserWithPassword): User {
   const result = Object.assign({}, user)
   delete result.password
   return result
@@ -42,7 +42,7 @@ export class UserService {
   private user_manager: UserManager
 
   constructor(app: express.Application, userManager: UserManager, settings: ServiceSettings,
-              sessionStore:any = createDefaultSessionStore(userManager)) {
+              sessionStore: any = createDefaultSessionStore(userManager)) {
 
     this.userManager = this.user_manager = userManager
 
@@ -72,36 +72,42 @@ export class UserService {
     return bcrypt.compare(password, hash)
   }
 
-  private checkLogin(request: Request): Promise<User_With_Password> {
-    const {
-      username: reqUsername,
-      password: reqPass,
-      email: reqEmail
-    } = request.data
-
-    const queryObj = reqUsername
-      ? {username: reqUsername}
-      : {email: reqEmail}
-    return this.userManager.User_Model.first(queryObj)
+  private _checkLogin(filter: any, password: string) {
+    return this.userManager.User_Model.first(filter)
       .then(user => {
         if (!user)
           throw new Bad_Request('Incorrect username or password.', {key: 'invalid-credentials'})
 
-        return bcrypt.compare(reqPass, user.password)
+        return bcrypt.compare(password, user.password)
           .then((success: boolean) => success
             ? user
-            : this.checkTempPassword(user, reqPass)
+            : this.checkTempPassword(user, password)
           )
       })
   }
 
-  private finishLogin(request: Request, user: User_With_Password) {
+  private checkUsernameOrEmailLogin(request: Request): Promise<UserWithPassword> {
+    const data = request.data
+
+    const filter = data.username
+      ? {username: data.username}
+      : {email: data.email}
+
+    return this._checkLogin(filter, data.password)
+  }
+
+  private checkEmailLogin(request: Request): Promise<UserWithPassword> {
+    const data = request.data
+    return this._checkLogin({email: data.email}, data.password)
+  }
+
+  private finishLogin(request: Request, user: UserWithPassword) {
     request.session.user = user.id
     return sanitize(user)
   }
 
   login(request: Request) {
-    return this.checkLogin(request)
+    return this.checkUsernameOrEmailLogin(request)
       .then(user => this.finishLogin(request, user))
   }
 
@@ -109,19 +115,23 @@ export class UserService {
     return request => this.login(request)
   }
 
-  create_login_2fa_handler(): lawn.Response_Generator {
-    return request => this.checkLogin(request)
-      .then(user => {
-        if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
-          throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
 
+  checkTwoFactor(user: User, request: Request) {
+    if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+      throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
+  }
+
+  create_login_2fa_handler(): lawn.Response_Generator {
+    return request => this.checkUsernameOrEmailLogin(request)
+      .then(user => {
+        this.checkTwoFactor(user, request)
         return this.finishLogin(request, user)
       })
   }
 
   createLogin2faHandlerWithBackup(): lawn.Response_Generator {
-    let currentUser: User_With_Password
-    return request => this.checkLogin(request)
+    let currentUser: UserWithPassword
+    return request => this.checkUsernameOrEmailLogin(request)
       .then(user => {
         currentUser = user
         if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))

@@ -12,6 +12,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var Sequelize = require("sequelize");
 var utility_1 = require("./utility");
+var errors_1 = require("vineyard-lawn/source/errors");
 var bcrypt = require('bcrypt');
 var UserManager = (function () {
     function UserManager(db, settings) {
@@ -20,12 +21,7 @@ var UserManager = (function () {
             throw new Error("Missing settings argument.");
         if (!settings.user_model)
             throw new Error("Missing user_model settings argument.");
-        this.table_keys = settings.table_keys || {
-            id: "id",
-            username: "username,",
-            password: "password"
-        };
-        this.User_Model = this.user_model = settings.user_model;
+        this.UserModel = this.User_Model = this.user_model = settings.user_model;
         this.sessionCollection = db.define('session', {
             sid: {
                 type: Sequelize.STRING,
@@ -33,7 +29,7 @@ var UserManager = (function () {
             },
             user: Sequelize.UUID,
             expires: Sequelize.DATE,
-            data: Sequelize.TEXT
+            data: Sequelize.TEXT // deprecated
         }, {
             underscored: true,
             createdAt: 'created',
@@ -126,17 +122,6 @@ var UserManager = (function () {
     UserManager.prototype.getOneTimeCodeCollection = function () {
         return this.oneTimeCodeCollection;
     };
-    UserManager.prototype.validateParameters = function (request) {
-        var invalidUserChars = request.username.match(/[^\w_]/g);
-        var invalidPassChars = request.username.match(/[^\w_\-?!]/g);
-        return {
-            valid: (!invalidUserChars && !invalidPassChars),
-            invalidChars: {
-                username: invalidUserChars,
-                password: invalidPassChars
-            }
-        };
-    };
     UserManager.prototype.tempPasswordHasExpired = function (tempPassword) {
         var expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000));
         return new Date() > expirationDate;
@@ -168,33 +153,54 @@ var UserManager = (function () {
             });
         });
     };
-    UserManager.prototype.createTempPassword = function (username) {
-        var _this = this;
-        return this.user_model.first({ username: username })
+    UserManager.prototype.getUserFromUsername = function (username) {
+        return this.UserModel.first({ username: username })
             .then(function (user) {
             if (!user)
-                throw new Error("Invalid username: " + username);
-            return _this.getTempPassword(user)
-                .then(function (tempPassword) {
-                if (!tempPassword) {
-                    var passwordString_1 = Math.random().toString(36).slice(2);
-                    return _this.hashPassword(passwordString_1)
-                        .then(function (hashedPassword) { return _this.tempPasswordCollection.create({
-                        user: user,
-                        password: hashedPassword
-                    }); })
-                        .then(function () {
-                        return {
-                            password: passwordString_1,
-                            username: user.username
-                        };
-                    });
-                }
-                else {
-                    return Promise.resolve(undefined);
-                }
-            });
+                throw new errors_1.BadRequest("Invalid username: " + username);
+            return user;
         });
+    };
+    UserManager.prototype.getUserFromEmail = function (email) {
+        return this.UserModel.first({ email: email })
+            .then(function (user) {
+            if (!user)
+                throw new errors_1.BadRequest("Invalid email: " + email);
+            return user;
+        });
+    };
+    UserManager.prototype._createTempPassword = function (user) {
+        var _this = this;
+        return this.getTempPassword(user)
+            .then(function (tempPassword) {
+            if (!tempPassword) {
+                var passwordString_1 = Math.random().toString(36).slice(2);
+                return _this.hashPassword(passwordString_1)
+                    .then(function (hashedPassword) { return _this.tempPasswordCollection.create({
+                    user: user,
+                    password: hashedPassword
+                }); })
+                    .then(function () {
+                    return {
+                        password: passwordString_1,
+                        username: user.username
+                    };
+                });
+            }
+            else {
+                return Promise.resolve(undefined);
+            }
+        });
+    };
+    UserManager.prototype.createTempPassword = function (username) {
+        var _this = this;
+        if (typeof username == 'string') {
+            return this.getUserFromUsername(username)
+                .then(function (user) { return _this._createTempPassword(user); });
+        }
+        else {
+            return this._createTempPassword(username);
+        }
     };
     UserManager.prototype.createEmailCode = function (user) {
         var _this = this;
@@ -240,12 +246,6 @@ var UserManager = (function () {
     };
     UserManager.prototype.getUserOneTimeCode = function (user) {
         return this.oneTimeCodeCollection.first({ user: user.id, available: true }).exec();
-    };
-    UserManager.prototype.sanitizeRequest = function (request) {
-        var check = this.validateParameters(request);
-        if (check.valid !== true) {
-            throw new Error("Parameters contain the following invalid characters " + check.invalidChars);
-        }
     };
     UserManager.prototype.fieldExists = function (key, value) {
         var filter = {};

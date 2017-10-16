@@ -10,6 +10,6 @@ export interface User {
     roles: Role[];
     [key: string]: any;
 }
-export interface User_With_Password extends User {
+export interface UserWithPassword extends User {
     password: string;
 }
