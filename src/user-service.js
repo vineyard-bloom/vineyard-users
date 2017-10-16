@@ -20,32 +20,37 @@ function sanitize(user) {
     delete result.password;
     return result;
 }
+function createDefaultSessionStore(userManager) {
+    var SequelizeStore = require('connect-session-sequelize')(session.Store);
+    return new SequelizeStore({
+        db: userManager.db,
+        table: 'session',
+        extendDefaultFields: function (defaults, session) {
+            return {
+                expires: defaults.expires,
+                user: session.user
+            };
+        },
+        checkExpirationInterval: 5 * 60 * 1000
+    });
+}
+exports.createDefaultSessionStore = createDefaultSessionStore;
 var UserService = (function () {
-    function UserService(app, user_manager, settings) {
-        this.user_manager = user_manager;
-        var SequelizeStore = require('connect-session-sequelize')(session.Store);
+    function UserService(app, userManager, settings, sessionStore) {
+        if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager); }
+        this.userManager = this.user_manager = userManager;
         if (!settings.secret)
             throw new Error("UserService settings.secret cannot be empty.");
         app.use(session({
             secret: settings.secret,
-            store: new SequelizeStore({
-                db: user_manager.db,
-                table: 'session',
-                extendDefaultFields: function (defaults, session) {
-                    return {
-                        expires: defaults.expires,
-                        user: session.user
-                    };
-                },
-                checkExpirationInterval: 5 * 60 * 1000
-            }),
+            store: sessionStore,
             cookie: settings.cookie || {},
             resave: false,
             saveUninitialized: true
         }));
     }
     UserService.prototype.checkTempPassword = function (user, password) {
-        return this.user_manager.matchTempPassword(user, password)
+        return this.userManager.matchTempPassword(user, password)
             .then(function (success) {
             if (!success)
                 throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
@@ -61,7 +66,7 @@ var UserService = (function () {
         var queryObj = reqUsername
             ? { username: reqUsername }
             : { email: reqEmail };
-        return this.user_manager.User_Model.first(queryObj)
+        return this.userManager.User_Model.first(queryObj)
             .then(function (user) {
             if (!user)
                 throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
@@ -110,15 +115,15 @@ var UserService = (function () {
     };
     UserService.prototype.verify2faOneTimeCode = function (request, user) {
         var _this = this;
-        return this.user_manager.getUserOneTimeCode(user).then(function (code) {
+        return this.userManager.getUserOneTimeCode(user).then(function (code) {
             if (!code)
                 return false;
-            return _this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(function (pass) {
+            return _this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(function (pass) {
                 if (!pass) {
                     return false;
                 }
-                return _this.user_manager.setOneTimeCodeToUnavailable(code)
-                    .then(function () { return _this.user_manager.resetTwoFactor(user).then(function () { return true; }); });
+                return _this.userManager.setOneTimeCodeToUnavailable(code)
+                    .then(function () { return _this.userManager.resetTwoFactor(user).then(function () { return true; }); });
             });
         });
     };
@@ -142,7 +147,7 @@ var UserService = (function () {
             method: vineyard_lawn_1.Method.get,
             path: "user",
             action: function (request) {
-                return _this.user_manager.getUser(request.session.user)
+                return _this.userManager.getUser(request.session.user)
                     .then(function (user) {
                     if (!user)
                         throw new vineyard_lawn_1.BadRequest("Invalid user ID", { key: 'invalid-user-id' });
@@ -153,19 +158,19 @@ var UserService = (function () {
     };
     UserService.prototype.createTempPassword = function (username) {
         var _this = this;
-        return this.user_manager.user_model.first({ username: username })
+        return this.userManager.user_model.first({ username: username })
             .then(function (user) {
             if (!user)
                 throw new vineyard_lawn_1.BadRequest("Invalid username", {
                     key: "invalid-username",
                     data: { username: username }
                 });
-            return _this.user_manager.getTempPassword(user)
+            return _this.userManager.getTempPassword(user)
                 .then(function (tempPassword) {
                 if (!tempPassword) {
                     var passwordString_1 = Math.random().toString(36).slice(2);
-                    return _this.user_manager.hashPassword(passwordString_1)
-                        .then(function (hashedPassword) { return _this.user_manager.tempPasswordCollection.create({
+                    return _this.userManager.hashPassword(passwordString_1)
+                        .then(function (hashedPassword) { return _this.userManager.tempPasswordCollection.create({
                         user: user,
                         password: hashedPassword
                     }); })
@@ -212,7 +217,7 @@ var UserService = (function () {
     UserService.prototype.addUserToRequest = function (request) {
         if (request.user)
             return Promise.resolve(request.user);
-        return this.user_manager.getUser(request.session.user)
+        return this.userManager.getUser(request.session.user)
             .then(function (user) {
             if (user)
                 return request.user = sanitize(user);
@@ -231,7 +236,7 @@ var UserService = (function () {
                 key: 'invalid-user-field',
                 data: { field: keyName }
             });
-        return this.user_manager.fieldExists(keyName, value)
+        return this.userManager.fieldExists(keyName, value)
             .then(function (result) { return ({
             exists: result
         }); });
@@ -241,8 +246,8 @@ var UserService = (function () {
 exports.UserService = UserService;
 var User_Service = (function (_super) {
     __extends(User_Service, _super);
-    function User_Service(app, user_manager, settings) {
-        return _super.call(this, app, user_manager, settings) || this;
+    function User_Service(app, UserManager, settings) {
+        return _super.call(this, app, UserManager, settings) || this;
     }
     return User_Service;
 }(UserService));

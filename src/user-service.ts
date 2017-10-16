@@ -1,4 +1,4 @@
-import {User_Manager} from "./user-manager";
+import {UserManager} from "./user-manager";
 
 const session = require('express-session');
 import {Method, HTTP_Error, Bad_Request, Request, BadRequest} from 'vineyard-lawn'
@@ -9,10 +9,12 @@ import {User, User_With_Password} from "./User";
 
 const bcrypt = require('bcrypt')
 
-export interface Service_Settings {
+export interface ServiceSettings {
   secret: string
   cookie?: any
 }
+
+export type Service_Settings = ServiceSettings
 
 function sanitize(user: User_With_Password): User {
   const result = Object.assign({}, user)
@@ -20,29 +22,36 @@ function sanitize(user: User_With_Password): User {
   return result
 }
 
-export class UserService {
-  user_manager: User_Manager
+export function createDefaultSessionStore(userManager: UserManager) {
+  const SequelizeStore = require('connect-session-sequelize')(session.Store)
+  return new SequelizeStore({
+    db: userManager.db,
+    table: 'session',
+    extendDefaultFields: function (defaults: any, session: any) {
+      return {
+        expires: defaults.expires,
+        user: session.user
+      };
+    },
+    checkExpirationInterval: 5 * 60 * 1000
+  })
+}
 
-  constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings) {
-    this.user_manager = user_manager
-    const SequelizeStore = require('connect-session-sequelize')(session.Store)
+export class UserService {
+  private userManager: UserManager
+  private user_manager: UserManager
+
+  constructor(app: express.Application, userManager: UserManager, settings: ServiceSettings,
+              sessionStore:any = createDefaultSessionStore(userManager)) {
+
+    this.userManager = this.user_manager = userManager
 
     if (!settings.secret)
       throw new Error("UserService settings.secret cannot be empty.")
 
     app.use(session({
       secret: settings.secret,
-      store: new SequelizeStore({
-        db: user_manager.db,
-        table: 'session',
-        extendDefaultFields: function (defaults: any, session: any) {
-          return {
-            expires: defaults.expires,
-            user: session.user
-          };
-        },
-        checkExpirationInterval: 5 * 60 * 1000
-      }),
+      store: sessionStore,
       cookie: settings.cookie || {},
       resave: false,
       saveUninitialized: true
@@ -50,7 +59,7 @@ export class UserService {
   }
 
   private checkTempPassword(user: User, password: string) {
-    return this.user_manager.matchTempPassword(user, password)
+    return this.userManager.matchTempPassword(user, password)
       .then(success => {
         if (!success)
           throw new Bad_Request('Incorrect username or password.', {key: 'invalid-credentials'})
@@ -73,7 +82,7 @@ export class UserService {
     const queryObj = reqUsername
       ? {username: reqUsername}
       : {email: reqEmail}
-    return this.user_manager.User_Model.first(queryObj)
+    return this.userManager.User_Model.first(queryObj)
       .then(user => {
         if (!user)
           throw new Bad_Request('Incorrect username or password.', {key: 'invalid-credentials'})
@@ -126,16 +135,16 @@ export class UserService {
   }
 
   private verify2faOneTimeCode(request: Request, user: User): Promise<boolean> {
-    return this.user_manager.getUserOneTimeCode(user).then(code => {
+    return this.userManager.getUserOneTimeCode(user).then(code => {
       if (!code)
         return false
 
-      return this.user_manager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
+      return this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
         if (!pass) {
           return false
         }
-        return this.user_manager.setOneTimeCodeToUnavailable(code)
-          .then(() => this.user_manager.resetTwoFactor(user).then(() => true)
+        return this.userManager.setOneTimeCodeToUnavailable(code)
+          .then(() => this.userManager.resetTwoFactor(user).then(() => true)
           )
       })
     })
@@ -162,7 +171,7 @@ export class UserService {
       method: Method.get,
       path: "user",
       action: request => {
-        return this.user_manager.getUser(request.session.user)
+        return this.userManager.getUser(request.session.user)
           .then(user => {
             if (!user)
               throw new BadRequest("Invalid user ID", {key: 'invalid-user-id'})
@@ -174,7 +183,7 @@ export class UserService {
   }
 
   createTempPassword(username: string): Promise<any> {
-    return this.user_manager.user_model.first({username: username})
+    return this.userManager.user_model.first({username: username})
       .then(user => {
         if (!user)
           throw new BadRequest(
@@ -185,12 +194,12 @@ export class UserService {
             }
           )
 
-        return this.user_manager.getTempPassword(user)
+        return this.userManager.getTempPassword(user)
           .then(tempPassword => {
             if (!tempPassword) {
               const passwordString = Math.random().toString(36).slice(2)
-              return this.user_manager.hashPassword(passwordString)
-                .then(hashedPassword => this.user_manager.tempPasswordCollection.create({
+              return this.userManager.hashPassword(passwordString)
+                .then(hashedPassword => this.userManager.tempPasswordCollection.create({
                     user: user,
                     password: hashedPassword
                   })
@@ -244,7 +253,7 @@ export class UserService {
     if (request.user)
       return Promise.resolve(request.user)
 
-    return this.user_manager.getUser(request.session.user)
+    return this.userManager.getUser(request.session.user)
       .then(user => {
         if (user)
           return request.user = sanitize(user)
@@ -269,7 +278,7 @@ export class UserService {
         }
       )
 
-    return this.user_manager.fieldExists(keyName, value)
+    return this.userManager.fieldExists(keyName, value)
       .then(result => ({
         exists: result
       }))
@@ -277,7 +286,7 @@ export class UserService {
 }
 
 export class User_Service extends UserService {
-  constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings) {
-    super(app, user_manager, settings)
+  constructor(app: express.Application, UserManager: UserManager, settings: ServiceSettings) {
+    super(app, UserManager, settings)
   }
 }

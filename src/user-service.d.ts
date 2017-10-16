@@ -1,16 +1,19 @@
 /// <reference types="express" />
-import { User_Manager } from "./user-manager";
+import { UserManager } from "./user-manager";
 import { Request } from 'vineyard-lawn';
 import * as lawn from 'vineyard-lawn';
 import * as express from 'express';
 import { User } from "./User";
-export interface Service_Settings {
+export interface ServiceSettings {
     secret: string;
     cookie?: any;
 }
+export declare type Service_Settings = ServiceSettings;
+export declare function createDefaultSessionStore(userManager: UserManager): any;
 export declare class UserService {
-    user_manager: User_Manager;
-    constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
+    private userManager;
+    private user_manager;
+    constructor(app: express.Application, userManager: UserManager, settings: ServiceSettings, sessionStore?: any);
     private checkTempPassword(user, password);
     checkPassword(password: string, hash: string): Promise<boolean>;
     private checkLogin(request);
@@ -36,5 +39,5 @@ export declare class UserService {
     }>;
 }
 export declare class User_Service extends UserService {
-    constructor(app: express.Application, user_manager: User_Manager, settings: Service_Settings);
+    constructor(app: express.Application, UserManager: UserManager, settings: ServiceSettings);
 }
