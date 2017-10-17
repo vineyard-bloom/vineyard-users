@@ -254,14 +254,7 @@ var UserManager = (function () {
             .then(function (user) { return !!user; });
     };
     UserManager.prototype.compareOneTimeCode = function (oneTimeCode, codeRecord) {
-        if (!oneTimeCode || !codeRecord) {
-            return Promise.resolve(false);
-        }
-        return bcrypt.compare(oneTimeCode, codeRecord.code).then(function (success) {
-            if (!success)
-                return false;
-            return true;
-        });
+        return Promise.resolve(oneTimeCode === codeRecord.code);
     };
     UserManager.prototype.setOneTimeCodeToUnavailable = function (oneTimeCode) {
         var _this = this;
