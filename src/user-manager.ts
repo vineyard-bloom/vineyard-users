@@ -309,16 +309,8 @@ export class UserManager {
       .then((user?: User) => !!user)
   }
 
-  compareOneTimeCode(oneTimeCode: Onetimecode, codeRecord: Onetimecode | undefined): Promise<boolean> {
-    if (!oneTimeCode || !codeRecord) {
-      return Promise.resolve(false)
-    }
-    return bcrypt.compare(oneTimeCode, codeRecord.code).then((success: boolean) => {
-      if (!success)
-        return false
-
-      return true
-    })
+  compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode | undefined): Promise<boolean> {
+    return Promise.resolve(oneTimeCode === codeRecord.code)
   }
 
   setOneTimeCodeToUnavailable(oneTimeCode: Onetimecode) {
