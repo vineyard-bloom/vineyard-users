@@ -257,23 +257,7 @@ var UserManager = (function () {
         return Promise.resolve(oneTimeCode === codeRecord.code);
     };
     UserManager.prototype.setOneTimeCodeToUnavailable = function (oneTimeCode) {
-        var _this = this;
-        return this.oneTimeCodeCollection.first({ code: oneTimeCode }).then(function (codeRecord) {
-            return _this.oneTimeCodeCollection.update(oneTimeCode.id, { available: false });
-        });
-    };
-    UserManager.prototype.createOneTimeCodeForUser = function (userId) {
-        var _this = this;
-        var randomNumber = function () { return Math.floor(Math.random() * 10).toString(); };
-        var randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber();
-        console.log(randomCode);
-        return bcrypt.hash(randomCode, 10).then(function (saltedRandomCode) {
-            return _this.oneTimeCodeCollection.create({
-                user: userId,
-                code: saltedRandomCode,
-                available: true
-            });
-        });
+        return this.oneTimeCodeCollection.update(oneTimeCode, { available: false });
     };
     UserManager.prototype.checkUniqueness = function (user, field) {
         if (field === void 0) { field = 'username'; }
@@ -286,9 +270,6 @@ var UserManager = (function () {
     };
     UserManager.prototype.getTempPasswordCollection = function () {
         return this.tempPasswordCollection;
-    };
-    UserManager.prototype.resetTwoFactor = function (user) {
-        return this.getUserCollection().update(user, { two_factor_enabled: false });
     };
     return UserManager;
 }());
