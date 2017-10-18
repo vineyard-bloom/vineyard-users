@@ -309,35 +309,12 @@ export class UserManager {
       .then((user?: User) => !!user)
   }
 
-  compareOneTimeCode(oneTimeCode: Onetimecode, codeRecord: Onetimecode | undefined): Promise<boolean> {
-    if (!oneTimeCode || !codeRecord) {
-      return Promise.resolve(false)
-    }
-    return bcrypt.compare(oneTimeCode, codeRecord.code).then((success: boolean) => {
-      if (!success)
-        return false
-
-      return true
-    })
+  compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode | undefined): Promise<boolean> {
+    return Promise.resolve(oneTimeCode === codeRecord.code)
   }
 
   setOneTimeCodeToUnavailable(oneTimeCode: Onetimecode) {
-    return this.oneTimeCodeCollection.first({code: oneTimeCode}).then(codeRecord =>
-      this.oneTimeCodeCollection.update(oneTimeCode.id, {available: false})
-    )
-  }
-
-  createOneTimeCodeForUser(userId: string) {
-    const randomNumber = () => Math.floor(Math.random() * 10).toString()
-    const randomCode = randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber() + randomNumber()
-    console.log(randomCode)
-    return bcrypt.hash(randomCode, 10).then((saltedRandomCode: string) =>
-      this.oneTimeCodeCollection.create({
-        user: userId,
-        code: saltedRandomCode,
-        available: true
-      })
-    )
+    return this.oneTimeCodeCollection.update(oneTimeCode, {available: false})
   }
 
   checkUniqueness(user: User, field = 'username') {
@@ -351,10 +328,6 @@ export class UserManager {
 
   getTempPasswordCollection() {
     return this.tempPasswordCollection
-  }
-
-  resetTwoFactor(user: User) {
-    return this.getUserCollection().update(user, {two_factor_enabled: false})
   }
 }
 

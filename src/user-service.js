@@ -133,7 +133,10 @@ var UserService = (function () {
                     return false;
                 }
                 return _this.userManager.setOneTimeCodeToUnavailable(code)
-                    .then(function () { return _this.userManager.resetTwoFactor(user).then(function () { return true; }); });
+                    .then(function () {
+                    request.session.oneTimeCodeUsed = true;
+                    return true;
+                });
             });
         });
     };

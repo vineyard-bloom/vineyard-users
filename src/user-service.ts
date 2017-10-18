@@ -154,8 +154,10 @@ export class UserService {
           return false
         }
         return this.userManager.setOneTimeCodeToUnavailable(code)
-          .then(() => this.userManager.resetTwoFactor(user).then(() => true)
-          )
+          .then(() => {
+            request.session.oneTimeCodeUsed = true
+            return true
+          })
       })
     })
   }

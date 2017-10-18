@@ -52,16 +52,14 @@ export declare class UserManager {
     createTempPassword(username: string | User): Promise<any>;
     createEmailCode(user: User): Promise<any>;
     verifyEmailCode(userId: string, submittedCode: string): Promise<boolean>;
-    getEmailCode(user: User): Promise<EmailVerification | undefined>;
-    getTempPassword(user: User): Promise<TempPassword | undefined>;
+    getEmailCode(user: User): Promise<any>;
+    getTempPassword(user: User): Promise<any>;
     getUserOneTimeCode(user: User): Promise<Onetimecode | undefined>;
     fieldExists(key: string, value: any): Promise<boolean>;
-    compareOneTimeCode(oneTimeCode: Onetimecode, codeRecord: Onetimecode | undefined): Promise<boolean>;
+    compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode | undefined): Promise<boolean>;
     setOneTimeCodeToUnavailable(oneTimeCode: Onetimecode): Promise<Onetimecode>;
-    createOneTimeCodeForUser(userId: string): any;
     checkUniqueness(user: User, field?: string): Promise<void>;
     getTempPasswordCollection(): Collection<TempPassword>;
-    resetTwoFactor(user: User): Promise<UserWithPassword>;
 }
 export declare class User_Manager extends UserManager {
     constructor(db: Sequelize.Sequelize, settings: Settings);
