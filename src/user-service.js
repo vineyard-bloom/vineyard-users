@@ -143,10 +143,12 @@ var UserService = (function () {
         request.session.user = null;
         return Promise.resolve({});
     };
+    // Deprecated
     UserService.prototype.createLogoutHandler = function () {
         var _this = this;
         return function (request) { return _this.logout(request); };
     };
+    // Deprecated
     UserService.prototype.create_logout_handler = function () {
         return this.createLogoutHandler();
     };
@@ -199,6 +201,7 @@ var UserService = (function () {
             });
         });
     };
+    // Deprecated
     UserService.prototype.create_login_endpoint = function (app, overrides) {
         if (overrides === void 0) { overrides = {}; }
         lawn.create_endpoint_with_defaults(app, {
@@ -207,6 +210,7 @@ var UserService = (function () {
             action: this.create_login_handler()
         }, overrides);
     };
+    // Deprecated
     UserService.prototype.create_logout_endpoint = function (app, overrides) {
         if (overrides === void 0) { overrides = {}; }
         lawn.create_endpoint_with_defaults(app, {
@@ -215,6 +219,7 @@ var UserService = (function () {
             action: this.create_logout_handler()
         }, overrides);
     };
+    // Deprecated
     UserService.prototype.create_all_endpoints = function (app) {
         this.create_get_user_endpoint(app);
         this.create_login_endpoint(app);

@@ -168,10 +168,12 @@ export class UserService {
     return Promise.resolve({})
   }
 
+  // Deprecated
   createLogoutHandler(): lawn.Response_Generator {
     return request => this.logout(request)
   }
 
+  // Deprecated
   create_logout_handler(): lawn.Response_Generator {
     return this.createLogoutHandler()
   }
@@ -232,6 +234,7 @@ export class UserService {
       })
   }
 
+  // Deprecated
   create_login_endpoint(app: any, overrides: lawn.Optional_Endpoint_Info = {}) {
     lawn.create_endpoint_with_defaults(app, {
       method: Method.post,
@@ -240,6 +243,7 @@ export class UserService {
     }, overrides)
   }
 
+  // Deprecated
   create_logout_endpoint(app: any, overrides: lawn.Optional_Endpoint_Info = {}) {
     lawn.create_endpoint_with_defaults(app, {
       method: Method.post,
@@ -248,6 +252,7 @@ export class UserService {
     }, overrides)
   }
 
+  // Deprecated
   create_all_endpoints(app: any) {
     this.create_get_user_endpoint(app)
     this.create_login_endpoint(app)
