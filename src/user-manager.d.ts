@@ -52,8 +52,8 @@ export declare class UserManager {
     createTempPassword(username: string | User): Promise<any>;
     createEmailCode(user: User): Promise<any>;
     verifyEmailCode(userId: string, submittedCode: string): Promise<boolean>;
-    getEmailCode(user: User): Promise<any>;
-    getTempPassword(user: User): Promise<any>;
+    getEmailCode(user: User): Promise<EmailVerification | undefined>;
+    getTempPassword(user: User): Promise<TempPassword | undefined>;
     getUserOneTimeCode(user: User): Promise<Onetimecode | undefined>;
     fieldExists(key: string, value: any): Promise<boolean>;
     compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode | undefined): Promise<boolean>;
