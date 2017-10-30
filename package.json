@@ -1,6 +1,6 @@
 {
   "name": "vineyard-users",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Vineyard users and login infrastructure",
   "main": "src/index.js",
   "types": "src/index.d.ts",
