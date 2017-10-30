@@ -58,7 +58,7 @@ export class UserService {
     }))
   }
 
-  private checkTempPassword(user: User, password: string) {
+  checkTempPassword(user: User, password: string) {
     return this.userManager.matchTempPassword(user, password)
       .then(success => {
         if (!success)
@@ -86,7 +86,7 @@ export class UserService {
       })
   }
 
-  private checkUsernameOrEmailLogin(request: Request): Promise<UserWithPassword> {
+  checkUsernameOrEmailLogin(request: Request): Promise<UserWithPassword> {
     const data = request.data
 
     const filter = data.username
@@ -96,12 +96,12 @@ export class UserService {
     return this._checkLogin(filter, data.password)
   }
 
-  private checkEmailLogin(request: Request): Promise<UserWithPassword> {
+  checkEmailLogin(request: Request): Promise<UserWithPassword> {
     const data = request.data
     return this._checkLogin({email: data.email}, data.password)
   }
 
-  private finishLogin(request: Request, user: UserWithPassword) {
+  finishLogin(request: Request, user: UserWithPassword) {
     request.session.user = user.id
     return sanitize(user)
   }
@@ -144,7 +144,7 @@ export class UserService {
       })
   }
 
-  private verify2faOneTimeCode(request: Request, user: User): Promise<boolean> {
+  verify2faOneTimeCode(request: Request, user: User): Promise<boolean> {
     return this.userManager.getUserOneTimeCode(user).then(code => {
       if (!code)
         return false
