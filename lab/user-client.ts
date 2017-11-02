@@ -22,14 +22,15 @@ export class UserClient<CreateUserResponse> {
   prepareTwoFactor(): Promise<string> {
     return this.webClient.get('user/2fa')
       .then((data:any) => this.webClient.post('user/2fa', {
-          twoFactor: getTwoFactorToken(data.secret)
+          twoFactor: getTwoFactorToken(data.secret),
+          twoFactorSecret: data.secret
         })
           .then(() => this.twoFactorSecret = data.secret)
       )
   }
 
   register(createUser: CreateUserData): Promise<CreateUserResponse> {
-    this.userIdentifier = createUser;
+    this.userIdentifier = <UserIdentifier> createUser;
 
     this.password = createUser.password;
     return this.prepareTwoFactor()
@@ -44,10 +45,17 @@ export class UserClient<CreateUserResponse> {
   }
 
   login(): Promise<void> {
-      return this.webClient.post('user/login', Object.assign({
-          password: this.password,
-          twoFactor: getTwoFactorToken(this.twoFactorSecret)
-      }), this.userIdentifier)
+      const data = Object.assign({
+              password: this.password,
+              twoFactor: getTwoFactorToken(this.twoFactorSecret)
+          },
+          this.userIdentifier
+      );
+
+      return this.webClient.post(
+          'user/login',
+          data
+      )
   }
 
   loginWithUsername(): Promise<void> {

@@ -126,8 +126,9 @@ var UserService = /** @class */ (function () {
     UserService.prototype.verify2faOneTimeCode = function (request, user) {
         var _this = this;
         return this.userManager.getUserOneTimeCode(user).then(function (code) {
-            if (!code)
+            if (!code) {
                 return false;
+            }
             return _this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(function (pass) {
                 if (!pass) {
                     return false;

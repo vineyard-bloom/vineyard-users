@@ -56,7 +56,7 @@ export declare class UserManager {
     getTempPassword(user: User): Promise<TempPassword | undefined>;
     getUserOneTimeCode(user: User): Promise<Onetimecode | undefined>;
     fieldExists(key: string, value: any): Promise<boolean>;
-    compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode | undefined): Promise<boolean>;
+    compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode): Promise<boolean>;
     setOneTimeCodeToUnavailable(oneTimeCode: Onetimecode): Promise<Onetimecode>;
     checkUniqueness(user: User, field?: string): Promise<void>;
     getTempPasswordCollection(): Collection<TempPassword>;

@@ -147,12 +147,11 @@ export class UserService {
   verify2faOneTimeCode(request: Request, user: User): Promise<boolean> {
     return this.userManager.getUserOneTimeCode(user).then((code: Onetimecode | undefined) => {
       if (!code) {return false}
-      code = <Onetimecode> code;
       return this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
         if (!pass) {
           return false
         }
-        return this.userManager.setOneTimeCodeToUnavailable(code)
+        return this.userManager.setOneTimeCodeToUnavailable(<Onetimecode> code)
           .then(() => {
             request.session.oneTimeCodeUsed = true
             return true
