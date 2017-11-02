@@ -82,7 +82,7 @@ export class UserManager {
           "primary": "user",
           "properties": {
             "user": {
-              "type": "UserIdentifier"
+              "type": "User"
             },
             "code": {
               "type": "string"
@@ -92,7 +92,7 @@ export class UserManager {
         "Onetimecode": {
           "properties": {
             "user": {
-              "type": "UserIdentifier"
+              "type": "User"
             },
             "code": {
               "type": "string"
