@@ -32,13 +32,22 @@ export class UserClient<CreateUserResponse> {
     this.userIdentifier = createUser;
 
     this.password = createUser.password;
-    createUser.twoFactorSecret = this.twoFactorSecret;
     return this.prepareTwoFactor()
-      .then(twoFactorSecret => this.webClient.post('user', createUser))
+      .then(twoFactorSecret => {
+        createUser.twoFactorSecret = twoFactorSecret
+        return this.webClient.post('user', createUser)
+      })
       .then(user => {
         this.createUserResponse = <CreateUserResponse> user;
         return this.createUserResponse;
       })
+  }
+
+  login(): Promise<void> {
+      return this.webClient.post('user/login', Object.assign({
+          password: this.password,
+          twoFactor: getTwoFactorToken(this.twoFactorSecret)
+      }), this.userIdentifier)
   }
 
   loginWithUsername(): Promise<void> {
