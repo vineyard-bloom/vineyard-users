@@ -52,7 +52,7 @@ var UserManager = /** @class */ (function () {
                     "primary": "user",
                     "properties": {
                         "user": {
-                            "type": "UserIdentifier"
+                            "type": "User"
                         },
                         "code": {
                             "type": "string"
@@ -62,7 +62,7 @@ var UserManager = /** @class */ (function () {
                 "Onetimecode": {
                     "properties": {
                         "user": {
-                            "type": "UserIdentifier"
+                            "type": "User"
                         },
                         "code": {
                             "type": "string"
