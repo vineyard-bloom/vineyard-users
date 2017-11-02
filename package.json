@@ -16,11 +16,8 @@
     "express-session": "^1.15.1",
     "speakeasy": "^2.0.0",
     "vineyard-ground": "vineyard-bloom/vineyard-ground#1.0.0-beta",
-    "vineyard-lawn": "vineyard-bloom/vineyard-lawn"
-  },
-  "peerDependencies": {
-    "express": "^4.15.2",
-    "sequelize": "^3.30.2"
+    "vineyard-lawn": "vineyard-bloom/vineyard-lawn",
+    "express": "^4.15.2"
   },
   "devDependencies": {
     "@types/express": "^4.0.35",
