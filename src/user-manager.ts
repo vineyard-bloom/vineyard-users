@@ -82,7 +82,7 @@ export class UserManager {
           "primary": "user",
           "properties": {
             "user": {
-              "type": "User"
+              "type": "UserIdentifier"
             },
             "code": {
               "type": "string"
@@ -92,7 +92,7 @@ export class UserManager {
         "Onetimecode": {
           "properties": {
             "user": {
-              "type": "User"
+              "type": "UserIdentifier"
             },
             "code": {
               "type": "string"
@@ -309,7 +309,7 @@ export class UserManager {
       .then((user?: User) => !!user)
   }
 
-  compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode | undefined): Promise<boolean> {
+  compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode): Promise<boolean> {
     return Promise.resolve(oneTimeCode === codeRecord.code)
   }
 

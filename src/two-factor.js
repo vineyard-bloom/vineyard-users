@@ -59,7 +59,7 @@ function getTwoFactorToken(secret) {
     });
 }
 exports.getTwoFactorToken = getTwoFactorToken;
-var TwoFactorEndpoints = (function () {
+var TwoFactorEndpoints = /** @class */ (function () {
     function TwoFactorEndpoints(compiler) {
         this.validators = compiler.compileApiSchema(require('./validation/two-factor.json'));
     }
