@@ -8,9 +8,9 @@ export type CreateUserData  =  UserIdentifier  &  {
   twoFactorSecret?: string
 }
 
-export class UserClient<CreateUserResponse> {
+export class UserClient {
   private webClient: WebClient;
-  private createUserResponse: CreateUserResponse;
+  private createUserResponse: any;
   private password: string;
   private twoFactorSecret: string;
   private userIdentifier: UserIdentifier;
@@ -29,7 +29,7 @@ export class UserClient<CreateUserResponse> {
       )
   }
 
-  register(createUser: CreateUserData): Promise<CreateUserResponse> {
+  register<CreateUserResponse>(createUser: CreateUserData): Promise<CreateUserResponse> {
     this.userIdentifier = <UserIdentifier> createUser;
 
     this.password = createUser.password;
