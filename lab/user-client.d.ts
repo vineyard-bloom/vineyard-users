@@ -1,18 +1,27 @@
 import { WebClient } from "vineyard-lawn/lab";
-export interface User {
+export declare type UserIdentifier = {
+    email: string;
+} | {
     username: string;
-    password?: string;
+} | {
+    id: string;
+};
+export interface CreateUserData extends UserIdentifier {
+    password: string;
+    twoFactorSecret?: string;
 }
-export declare class UserClient {
+export declare class UserClient<CreateUserResponse> {
     private webClient;
-    private user;
+    private createUserResponse;
     private password;
     private twoFactorSecret;
+    private userIdentifier;
     constructor(webClient: WebClient);
     prepareTwoFactor(): Promise<string>;
-    register(user: any): Promise<User>;
-    login(): Promise<void>;
+    register(createUser: CreateUserData): Promise<CreateUserResponse>;
+    loginWithUsername(): Promise<void>;
+    loginWithEmail(): Promise<void>;
     logout(): Promise<void>;
     getWebClient(): WebClient;
-    getUser(): User;
+    getUser(): UserIdentifier;
 }

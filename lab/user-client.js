@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var src_1 = require("../src");
-var UserClient = (function () {
+var UserClient = /** @class */ (function () {
     function UserClient(webClient) {
         this.webClient = webClient;
     }
@@ -13,17 +13,30 @@ var UserClient = (function () {
         })
             .then(function () { return _this.twoFactorSecret = data.secret; }); });
     };
-    UserClient.prototype.register = function (user) {
+    UserClient.prototype.register = function (createUser) {
         var _this = this;
-        this.password = user.password;
-        user.twoFactorSecret = this.twoFactorSecret;
+        this.userIdentifier = createUser;
+        this.password = createUser.password;
+        createUser.twoFactorSecret = this.twoFactorSecret;
         return this.prepareTwoFactor()
-            .then(function (twoFactorSecret) { return _this.webClient.post('user', user); })
-            .then(function (user) { return _this.user = user; });
+            .then(function (twoFactorSecret) { return _this.webClient.post('user', createUser); })
+            .then(function (user) {
+            _this.createUserResponse = user;
+            return _this.createUserResponse;
+        });
     };
-    UserClient.prototype.login = function () {
+    UserClient.prototype.loginWithUsername = function () {
+        var userIdentifier = this.userIdentifier;
         return this.webClient.post('user/login', {
-            username: this.user.username,
+            username: userIdentifier.username,
+            password: this.password,
+            twoFactor: src_1.getTwoFactorToken(this.twoFactorSecret)
+        });
+    };
+    UserClient.prototype.loginWithEmail = function () {
+        var userIdentifier = this.userIdentifier;
+        return this.webClient.post('user/login', {
+            email: userIdentifier.email,
             password: this.password,
             twoFactor: src_1.getTwoFactorToken(this.twoFactorSecret)
         });
@@ -35,7 +48,7 @@ var UserClient = (function () {
         return this.webClient;
     };
     UserClient.prototype.getUser = function () {
-        return this.user;
+        return this.createUserResponse;
     };
     return UserClient;
 }());

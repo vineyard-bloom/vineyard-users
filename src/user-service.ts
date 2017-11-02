@@ -1,4 +1,4 @@
-import {UserManager} from "./user-manager";
+import {Onetimecode, UserManager} from "./user-manager";
 
 const session = require('express-session');
 import {Method, HTTP_Error, Bad_Request, Request, BadRequest} from 'vineyard-lawn'
@@ -145,10 +145,9 @@ export class UserService {
   }
 
   verify2faOneTimeCode(request: Request, user: User): Promise<boolean> {
-    return this.userManager.getUserOneTimeCode(user).then(code => {
-      if (!code)
-        return false
-
+    return this.userManager.getUserOneTimeCode(user).then((code: Onetimecode | undefined) => {
+      if (!code) {return false}
+      code = <Onetimecode> code;
       return this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
         if (!pass) {
           return false

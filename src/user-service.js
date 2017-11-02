@@ -35,7 +35,7 @@ function createDefaultSessionStore(userManager) {
     });
 }
 exports.createDefaultSessionStore = createDefaultSessionStore;
-var UserService = (function () {
+var UserService = /** @class */ (function () {
     function UserService(app, userManager, settings, sessionStore) {
         if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager); }
         this.userManager = this.user_manager = userManager;
@@ -262,7 +262,7 @@ var UserService = (function () {
     return UserService;
 }());
 exports.UserService = UserService;
-var User_Service = (function (_super) {
+var User_Service = /** @class */ (function (_super) {
     __extends(User_Service, _super);
     function User_Service(app, UserManager, settings) {
         return _super.call(this, app, UserManager, settings) || this;
