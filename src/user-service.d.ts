@@ -4,12 +4,14 @@ import { Request } from 'vineyard-lawn';
 import * as lawn from 'vineyard-lawn';
 import * as express from 'express';
 import { User, UserWithPassword } from "./User";
+import { SequelizeStore } from "./session-store";
 export interface ServiceSettings {
     secret: string;
-    cookie?: any;
+    cookie: any;
+    rolling?: true;
 }
 export declare type Service_Settings = ServiceSettings;
-export declare function createDefaultSessionStore(userManager: UserManager): any;
+export declare function createDefaultSessionStore(userManager: UserManager, expiration: number): SequelizeStore;
 export declare class UserService {
     private userManager;
     private user_manager;

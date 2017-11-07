@@ -6,12 +6,14 @@ import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as two_factor from './two-factor'
 import {User, UserWithPassword} from "./User";
+import {SequelizeStore} from "./session-store";
 
 const bcrypt = require('bcrypt')
 
 export interface ServiceSettings {
   secret: string
-  cookie?: any
+  cookie: any
+  rolling?: true
 }
 
 export type Service_Settings = ServiceSettings
@@ -22,18 +24,10 @@ function sanitize(user: UserWithPassword): User {
   return result
 }
 
-export function createDefaultSessionStore(userManager: UserManager) {
-  const SequelizeStore = require('connect-session-sequelize')(session.Store)
-  return new SequelizeStore({
-    db: userManager.db,
-    table: 'session',
-    extendDefaultFields: function (defaults: any, session: any) {
-      return {
-        expires: defaults.expires,
-        user: session.user
-      };
-    },
-    checkExpirationInterval: 5 * 60 * 1000
+export function createDefaultSessionStore(userManager: UserManager, expiration: number) {
+  return new SequelizeStore(userManager.getSessionCollection(), {
+    expiration: expiration,
+    updateFrequency: 5 * 60 * 1000
   })
 }
 
@@ -42,7 +36,7 @@ export class UserService {
   private user_manager: UserManager
 
   constructor(app: express.Application, userManager: UserManager, settings: ServiceSettings,
-              sessionStore: any = createDefaultSessionStore(userManager)) {
+              sessionStore: any = createDefaultSessionStore(userManager, settings.cookie.expiration)) {
 
     this.userManager = this.user_manager = userManager
 
@@ -52,7 +46,7 @@ export class UserService {
     app.use(session({
       secret: settings.secret,
       store: sessionStore,
-      cookie: settings.cookie || {},
+      cookie: settings.cookie,
       resave: false,
       saveUninitialized: true
     }))

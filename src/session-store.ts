@@ -37,8 +37,8 @@ export class SequelizeStore {
   expirationCron: any
 
   constructor(sessionModel: any, options: SequelizeStoreOptions) {
+    this.sessionModel = sessionModel
     this.options = options
-
     this.startSessionCron()
   }
 

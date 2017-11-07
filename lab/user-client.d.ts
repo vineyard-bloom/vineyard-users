@@ -10,13 +10,17 @@ export declare type CreateUserData = UserIdentifier & {
     password: string;
     twoFactorSecret?: string;
 };
+export interface UserInfo {
+    identifier: UserIdentifier;
+    password: string;
+}
 export declare class UserClient {
     private webClient;
     private createUserResponse;
     private password;
     private twoFactorSecret;
     private userIdentifier;
-    constructor(webClient: WebClient);
+    constructor(webClient: WebClient, info?: UserInfo);
     prepareTwoFactor(): Promise<string>;
     register<CreateUserResponse>(createUser: CreateUserData): Promise<CreateUserResponse>;
     login(): Promise<void>;

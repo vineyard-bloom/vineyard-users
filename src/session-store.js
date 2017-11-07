@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var debug = require('debug')('vineyard-session-store');
-var SequelizeStore = /** @class */ (function () {
+var SequelizeStore = (function () {
     function SequelizeStore(sessionModel, options) {
+        this.sessionModel = sessionModel;
         this.options = options;
         this.startSessionCron();
     }

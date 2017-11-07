@@ -14,37 +14,30 @@ var session = require('express-session');
 var vineyard_lawn_1 = require("vineyard-lawn");
 var lawn = require("vineyard-lawn");
 var two_factor = require("./two-factor");
+var session_store_1 = require("./session-store");
 var bcrypt = require('bcrypt');
 function sanitize(user) {
     var result = Object.assign({}, user);
     delete result.password;
     return result;
 }
-function createDefaultSessionStore(userManager) {
-    var SequelizeStore = require('connect-session-sequelize')(session.Store);
-    return new SequelizeStore({
-        db: userManager.db,
-        table: 'session',
-        extendDefaultFields: function (defaults, session) {
-            return {
-                expires: defaults.expires,
-                user: session.user
-            };
-        },
-        checkExpirationInterval: 5 * 60 * 1000
+function createDefaultSessionStore(userManager, expiration) {
+    return new session_store_1.SequelizeStore(userManager.getSessionCollection(), {
+        expiration: expiration,
+        updateFrequency: 5 * 60 * 1000
     });
 }
 exports.createDefaultSessionStore = createDefaultSessionStore;
 var UserService = (function () {
     function UserService(app, userManager, settings, sessionStore) {
-        if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager); }
+        if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager, settings.cookie.expiration); }
         this.userManager = this.user_manager = userManager;
         if (!settings.secret)
             throw new Error("UserService settings.secret cannot be empty.");
         app.use(session({
             secret: settings.secret,
             store: sessionStore,
-            cookie: settings.cookie || {},
+            cookie: settings.cookie,
             resave: false,
             saveUninitialized: true
         }));

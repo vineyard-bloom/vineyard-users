@@ -3,9 +3,14 @@ import {getTwoFactorToken} from "../src"
 
 export type UserIdentifier = { email: string } | { username: string } | { id: string }
 
-export type CreateUserData  =  UserIdentifier  &  {
+export type CreateUserData = UserIdentifier & {
   password: string,
   twoFactorSecret?: string
+}
+
+export interface UserInfo {
+  identifier: UserIdentifier
+  password: string
 }
 
 export class UserClient {
@@ -15,13 +20,17 @@ export class UserClient {
   private twoFactorSecret: string;
   private userIdentifier: UserIdentifier;
 
-  constructor(webClient: WebClient) {
+  constructor(webClient: WebClient, info?: UserInfo) {
     this.webClient = webClient;
+    if (info) {
+      this.userIdentifier = info.identifier
+      this.password = info.password
+    }
   }
 
   prepareTwoFactor(): Promise<string> {
     return this.webClient.get('user/2fa')
-      .then((data:any) => this.webClient.post('user/2fa', {
+      .then((data: any) => this.webClient.post('user/2fa', {
           twoFactor: getTwoFactorToken(data.secret),
           twoFactorSecret: data.secret
         })
@@ -45,17 +54,17 @@ export class UserClient {
   }
 
   login(): Promise<void> {
-      const data = Object.assign({
-              password: this.password,
-              twoFactor: getTwoFactorToken(this.twoFactorSecret)
-          },
-          this.userIdentifier
-      );
+    const data = Object.assign({
+        password: this.password,
+        twoFactor: getTwoFactorToken(this.twoFactorSecret)
+      },
+      this.userIdentifier
+    );
 
-      return this.webClient.post(
-          'user/login',
-          data
-      )
+    return this.webClient.post(
+      'user/login',
+      data
+    )
   }
 
   loginWithUsername(): Promise<void> {

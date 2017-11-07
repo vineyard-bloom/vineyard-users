@@ -2,8 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var src_1 = require("../src");
 var UserClient = (function () {
-    function UserClient(webClient) {
+    function UserClient(webClient, info) {
         this.webClient = webClient;
+        if (info) {
+            this.userIdentifier = info.identifier;
+            this.password = info.password;
+        }
     }
     UserClient.prototype.prepareTwoFactor = function () {
         var _this = this;
