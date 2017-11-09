@@ -7,7 +7,7 @@ import {BadRequest} from "vineyard-lawn/source/errors";
 const bcrypt = require('bcrypt');
 
 export interface Settings {
-  user_model: any
+  user_model?: any
   tableKeys?: any
   model: any
 }
@@ -31,12 +31,10 @@ export interface Onetimecode {
 }
 
 export class UserManager {
-  db: Sequelize.Sequelize
-  UserModel: Collection<UserWithPassword>
-  User_Model: Collection<UserWithPassword> // deprecated
-  user_model: Collection<UserWithPassword> // deprecated
-  private sessionCollection: any;
-  tempPasswordCollection: Collection<TempPassword>
+  private db: Sequelize.Sequelize
+  private userModel: Collection<UserWithPassword>
+  private sessionCollection: any
+  private tempPasswordCollection: Collection<TempPassword>
   private emailVerificationCollection: Collection<EmailVerification>
   private oneTimeCodeCollection: Collection<Onetimecode>
 
@@ -45,28 +43,30 @@ export class UserManager {
     if (!settings)
       throw new Error("Missing settings argument.");
 
-    if (!settings.user_model)
-      throw new Error("Missing user_model settings argument.");
-
-    this.UserModel = this.User_Model = this.user_model = settings.user_model
-
-    this.sessionCollection = db.define('session', {
-        sid: {
-          type: Sequelize.STRING,
-          primaryKey: true
-        },
-        user: Sequelize.UUID,
-        expires: Sequelize.DATE,
-        data: Sequelize.TEXT // deprecated
-      }, {
-        underscored: true,
-        createdAt: 'created',
-        updatedAt: 'modified',
-      }
-    )
+    const self: any = this
+    this.userModel = self.UserModel = self.User_Model = self.user_model =
+      settings.user_model || settings.model.User
 
     if (settings.model) {
       settings.model.ground.addDefinitions({
+        "Session": {
+          "primaryKeys": ["sid"],
+          "properties": {
+            "sid": {
+              "type": "string"
+            },
+            "user": {
+              "type": "uuid",
+              "nullable": true
+            },
+            "expires": {
+              "type": "datetime"
+            },
+            "data": {
+              "type": "string"
+            }
+          }
+        },
         "TempPassword": {
           "primary": "user",
           "properties": {
@@ -82,7 +82,7 @@ export class UserManager {
           "primary": "user",
           "properties": {
             "user": {
-              "type": "UserIdentifier"
+              "type": "User"
             },
             "code": {
               "type": "string"
@@ -92,7 +92,7 @@ export class UserManager {
         "Onetimecode": {
           "properties": {
             "user": {
-              "type": "UserIdentifier"
+              "type": "User"
             },
             "code": {
               "type": "string"
@@ -104,10 +104,18 @@ export class UserManager {
         },
       })
 
+      this.sessionCollection = settings.model.Session
       this.tempPasswordCollection = settings.model.TempPassword
       this.emailVerificationCollection = settings.model.ground.collections.EmailVerification
       this.oneTimeCodeCollection = settings.model.ground.collections.Onetimecode
     }
+
+    // Backwards compatibility
+    self.create_user = this.createUser
+  }
+
+  getUserModel() {
+    return this.userModel
   }
 
   hashPassword(password: string): Promise<string> {
@@ -115,7 +123,7 @@ export class UserManager {
   }
 
   prepareNewUser(fields: any) {
-    if (!fields.roles && (this.User_Model as any).trellis.properties.roles)
+    if (!fields.roles && (this.userModel as any).trellis.properties.roles)
       fields.roles = [];
 
     if (typeof fields.email === 'string')
@@ -132,22 +140,18 @@ export class UserManager {
     return this.prepareNewUser(fields)
   }
 
-  create_user(fields: any, uniqueField: string | string[] = 'username'): Promise<any> {
-    return this.createUser(fields, uniqueField)
-  }
-
   createUser(fields: any, uniqueField: string | string[] = 'username'): Promise<any> {
     // this.sanitizeRequest(fields)
     const uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField]
     return promiseEach(uniqueFields, (field: any) => this.checkUniqueness(fields, field))
       .then(() => {
         return this.prepare_new_user(fields)
-          .then(user => this.User_Model.create(fields))
+          .then(user => this.userModel.create(fields))
       })
   }
 
   getUser(id: { id: string } | string): Promise<UserWithPassword | undefined> {
-    return this.User_Model.get(id).exec()
+    return this.userModel.get(id).exec()
   }
 
   getSessionCollection() {
@@ -155,7 +159,7 @@ export class UserManager {
   }
 
   getUserCollection() {
-    return this.user_model
+    return this.userModel
   }
 
   getOneTimeCodeCollection() {
@@ -200,7 +204,7 @@ export class UserManager {
   }
 
   getUserFromUsername(username: string): Promise<UserWithPassword> {
-    return this.UserModel.first({username: username})
+    return this.userModel.first({username: username})
       .then(user => {
         if (!user)
           throw new BadRequest("Invalid username: " + username)
@@ -210,7 +214,7 @@ export class UserManager {
   }
 
   getUserFromEmail(email: string): Promise<UserWithPassword> {
-    return this.UserModel.first({email: email})
+    return this.userModel.first({email: email})
       .then(user => {
         if (!user)
           throw new BadRequest("Invalid email: " + email)
@@ -269,7 +273,7 @@ export class UserManager {
   }
 
   verifyEmailCode(userId: string, submittedCode: string): Promise<boolean> {
-    return this.user_model.first({id: userId}).exec()
+    return this.userModel.first({id: userId}).exec()
       .then(user => {
         if (!user)
           return false
@@ -281,7 +285,7 @@ export class UserManager {
             if (!emailCode || emailCode.code != submittedCode)
               return Promise.resolve(false)
 
-            return this.user_model.update(user, {
+            return this.userModel.update(user, {
               emailVerified: true
             })
             // .then(() => this.emailVerificationCollection.remove(emailCode))
@@ -305,7 +309,7 @@ export class UserManager {
   fieldExists(key: string, value: any): Promise<boolean> {
     const filter: any = {}
     filter[key] = value
-    return this.User_Model.first(filter).exec()
+    return this.userModel.first(filter).exec()
       .then((user?: User) => !!user)
   }
 

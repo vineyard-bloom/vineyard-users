@@ -10,7 +10,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-var Sequelize = require("sequelize");
 var utility_1 = require("./utility");
 var errors_1 = require("vineyard-lawn/source/errors");
 var bcrypt = require('bcrypt');
@@ -19,24 +18,29 @@ var UserManager = (function () {
         this.db = db;
         if (!settings)
             throw new Error("Missing settings argument.");
-        if (!settings.user_model)
-            throw new Error("Missing user_model settings argument.");
-        this.UserModel = this.User_Model = this.user_model = settings.user_model;
-        this.sessionCollection = db.define('session', {
-            sid: {
-                type: Sequelize.STRING,
-                primaryKey: true
-            },
-            user: Sequelize.UUID,
-            expires: Sequelize.DATE,
-            data: Sequelize.TEXT // deprecated
-        }, {
-            underscored: true,
-            createdAt: 'created',
-            updatedAt: 'modified',
-        });
+        var self = this;
+        this.userModel = self.UserModel = self.User_Model = self.user_model =
+            settings.user_model || settings.model.User;
         if (settings.model) {
             settings.model.ground.addDefinitions({
+                "Session": {
+                    "primaryKeys": ["sid"],
+                    "properties": {
+                        "sid": {
+                            "type": "string"
+                        },
+                        "user": {
+                            "type": "uuid",
+                            "nullable": true
+                        },
+                        "expires": {
+                            "type": "datetime"
+                        },
+                        "data": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "TempPassword": {
                     "primary": "user",
                     "properties": {
@@ -52,7 +56,7 @@ var UserManager = (function () {
                     "primary": "user",
                     "properties": {
                         "user": {
-                            "type": "UserIdentifier"
+                            "type": "User"
                         },
                         "code": {
                             "type": "string"
@@ -62,7 +66,7 @@ var UserManager = (function () {
                 "Onetimecode": {
                     "properties": {
                         "user": {
-                            "type": "UserIdentifier"
+                            "type": "User"
                         },
                         "code": {
                             "type": "string"
@@ -73,16 +77,22 @@ var UserManager = (function () {
                     }
                 },
             });
+            this.sessionCollection = settings.model.Session;
             this.tempPasswordCollection = settings.model.TempPassword;
             this.emailVerificationCollection = settings.model.ground.collections.EmailVerification;
             this.oneTimeCodeCollection = settings.model.ground.collections.Onetimecode;
         }
+        // Backwards compatibility
+        self.create_user = this.createUser;
     }
+    UserManager.prototype.getUserModel = function () {
+        return this.userModel;
+    };
     UserManager.prototype.hashPassword = function (password) {
         return bcrypt.hash(password, 10);
     };
     UserManager.prototype.prepareNewUser = function (fields) {
-        if (!fields.roles && this.User_Model.trellis.properties.roles)
+        if (!fields.roles && this.userModel.trellis.properties.roles)
             fields.roles = [];
         if (typeof fields.email === 'string')
             fields.email = fields.email.toLowerCase();
@@ -95,10 +105,6 @@ var UserManager = (function () {
     UserManager.prototype.prepare_new_user = function (fields) {
         return this.prepareNewUser(fields);
     };
-    UserManager.prototype.create_user = function (fields, uniqueField) {
-        if (uniqueField === void 0) { uniqueField = 'username'; }
-        return this.createUser(fields, uniqueField);
-    };
     UserManager.prototype.createUser = function (fields, uniqueField) {
         var _this = this;
         if (uniqueField === void 0) { uniqueField = 'username'; }
@@ -107,17 +113,17 @@ var UserManager = (function () {
         return utility_1.promiseEach(uniqueFields, function (field) { return _this.checkUniqueness(fields, field); })
             .then(function () {
             return _this.prepare_new_user(fields)
-                .then(function (user) { return _this.User_Model.create(fields); });
+                .then(function (user) { return _this.userModel.create(fields); });
         });
     };
     UserManager.prototype.getUser = function (id) {
-        return this.User_Model.get(id).exec();
+        return this.userModel.get(id).exec();
     };
     UserManager.prototype.getSessionCollection = function () {
         return this.sessionCollection;
     };
     UserManager.prototype.getUserCollection = function () {
-        return this.user_model;
+        return this.userModel;
     };
     UserManager.prototype.getOneTimeCodeCollection = function () {
         return this.oneTimeCodeCollection;
@@ -154,7 +160,7 @@ var UserManager = (function () {
         });
     };
     UserManager.prototype.getUserFromUsername = function (username) {
-        return this.UserModel.first({ username: username })
+        return this.userModel.first({ username: username })
             .then(function (user) {
             if (!user)
                 throw new errors_1.BadRequest("Invalid username: " + username);
@@ -162,7 +168,7 @@ var UserManager = (function () {
         });
     };
     UserManager.prototype.getUserFromEmail = function (email) {
-        return this.UserModel.first({ email: email })
+        return this.userModel.first({ email: email })
             .then(function (user) {
             if (!user)
                 throw new errors_1.BadRequest("Invalid email: " + email);
@@ -221,7 +227,7 @@ var UserManager = (function () {
     };
     UserManager.prototype.verifyEmailCode = function (userId, submittedCode) {
         var _this = this;
-        return this.user_model.first({ id: userId }).exec()
+        return this.userModel.first({ id: userId }).exec()
             .then(function (user) {
             if (!user)
                 return false;
@@ -231,7 +237,7 @@ var UserManager = (function () {
                 .then(function (emailCode) {
                 if (!emailCode || emailCode.code != submittedCode)
                     return Promise.resolve(false);
-                return _this.user_model.update(user, {
+                return _this.userModel.update(user, {
                     emailVerified: true
                 })
                     .then(function () { return true; });
@@ -250,7 +256,7 @@ var UserManager = (function () {
     UserManager.prototype.fieldExists = function (key, value) {
         var filter = {};
         filter[key] = value;
-        return this.User_Model.first(filter).exec()
+        return this.userModel.first(filter).exec()
             .then(function (user) { return !!user; });
     };
     UserManager.prototype.compareOneTimeCode = function (oneTimeCode, codeRecord) {

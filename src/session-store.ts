@@ -1,10 +1,10 @@
-import * as path from 'path'
-
-var debug = require('debug')('vineyard-session-store')
+const debug = require('debug')('vineyard-session-store')
+import {Store} from 'express-session'
 
 export interface SequelizeStoreOptions {
   expiration: number
   updateFrequency: number
+  secure: boolean
 }
 
 export interface NewSessionRecord {
@@ -17,26 +17,21 @@ export interface SessionRecord extends NewSessionRecord {
 }
 
 export interface SequelizeSessionRecord extends SessionRecord {
+  dataValues: any
   destroy: any
   save: any
-}
-
-export interface ExpressCookie {
-  expires: Date
-}
-
-export interface ExpressSession {
-  cookie: ExpressCookie
+  update: any
 }
 
 export type SimpleCallback = (error: Error) => void
 
-export class SequelizeStore {
+export class SequelizeStore extends Store {
   options: SequelizeStoreOptions
   sessionModel: any
   expirationCron: any
 
   constructor(sessionModel: any, options: SequelizeStoreOptions) {
+    super()
     this.sessionModel = sessionModel
     this.options = options
     this.startSessionCron()
@@ -63,7 +58,7 @@ export class SequelizeStore {
     }
   }
 
-  private determineExpiration(cookie: ExpressCookie | undefined): Date {
+  private determineExpiration(cookie: any | undefined): Date {
     return cookie && cookie.expires
       ? cookie.expires
       : new Date(Date.now() + this.options.expiration)
@@ -71,8 +66,8 @@ export class SequelizeStore {
 
   // Session Interface Implementation
 
-  clear(callback: SimpleCallback) {
-    return this.sessionModel.destroy({
+  clear = (callback: (err: any) => void) => {
+    this.sessionModel.destroy({
       where: {},
       truncate: true
     }).asCallback(callback)
@@ -80,7 +75,7 @@ export class SequelizeStore {
 
   destroySession(sid: string, callback: SimpleCallback) {
     debug('Deleting %s', sid)
-    return this.sessionModel.find({where: {sid: sid}})
+    this.sessionModel.find({where: {sid: sid}})
       .then((session: SequelizeSessionRecord) => {
         if (!session) {
           debug('Could not find session %s', sid)
@@ -90,27 +85,36 @@ export class SequelizeStore {
       }).asCallback(callback)
   }
 
-  get(sid: string, callback: (error: Error, session: any) => void): Promise<SessionRecord | undefined> {
-    debug('Get "%s"', sid)
-    return this.sessionModel.find({where: {sid: sid}})
+  formatCookie(expires: Date) {
+    return {
+      maxAge: this.options.expiration,
+      secure: this.options.secure || false,
+      expires: expires
+    }
+  }
+
+  get = (sid: string, callback: (err: any, session: Express.Session) => void) => {
+    debug('GET "%s"', sid)
+    this.sessionModel.find({where: {sid: sid}})
       .then((session: SessionRecord) => {
         if (!session) {
           debug('No session with id %s', sid)
           return undefined
         }
-        debug('Found %s', session.sid)
+        debug('FOUND %s', session.sid)
 
         return {
-          user: session.user
+          user: session.user,
+          cookie: this.formatCookie(session.expires)
         }
       }).asCallback(callback)
   }
 
-  length(callback: SimpleCallback) {
-    return this.sessionModel.count().asCallback(callback)
+  length = (callback: (err: any, length: number) => void) => {
+    this.sessionModel.count().asCallback(callback)
   }
 
-  set(sid: string, data: ExpressSession, callback: SimpleCallback): Promise<any> {
+  set = (sid: string, data: Express.Session, callback: (err: any, session: Express.Session) => void) => {
     debug('INSERT "%s"', sid)
     const expires = this.determineExpiration(data.cookie)
 
@@ -121,28 +125,36 @@ export class SequelizeStore {
 
     const values: NewSessionRecord = Object.assign({}, defaults, data)
 
-    return this.sessionModel.findCreateFind({
+    this.sessionModel.findCreateFind({
       where: {'sid': sid},
       defaults: values
-    }).spread(function sessionCreated(existingSession: SequelizeSessionRecord) {
-      let changed = false
+    }).spread((existingRecord: SequelizeSessionRecord) => {
+      const existingSession = existingRecord.dataValues
       if (existingSession.user != values.user) {
         existingSession.user = values.user
-        changed = true
-      }
-      if (changed) {
         existingSession.expires = expires
-        return existingSession.save().return(existingSession)
+        existingSession.cookie = this.formatCookie(existingSession.expires)
+        const sql = `
+        UPDATE sessions
+        SET "user" = :user
+        WHERE sid = :sid`
+        return this.sessionModel.sequelize.query(sql, {
+          replacements: {
+            sid: sid,
+            user: values.user
+          }
+        })
       }
+      existingSession.cookie = this.formatCookie(existingSession.expires)
       return existingSession
     }).asCallback(callback)
   }
 
-  touchSession(sid: string, data: ExpressSession, callback: SimpleCallback) {
+  touchSession(sid: string, data: any, callback: SimpleCallback) {
     debug('TOUCH "%s"', sid)
     const expires = this.determineExpiration(data.cookie)
 
-    return this.sessionModel.update({expires: expires}, {where: {sid: sid}})
+    this.sessionModel.update({expires: expires}, {where: {sid: sid}})
       .then((rows: any) => rows).asCallback(callback)
   }
 }

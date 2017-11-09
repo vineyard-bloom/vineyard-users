@@ -1,0 +1,23 @@
+{
+  "User": {
+    "properties": {
+      "email": {
+        "type": "string",
+        "unique": true
+      },
+      "username": {
+        "type": "string",
+        "unique": true
+      },
+      "password": {
+        "type": "string"
+      },
+      "two_factor_secret": {
+        "type": "string"
+      },
+      "two_factor_enabled": {
+        "type": "bool"
+      }
+    }
+  }
+}

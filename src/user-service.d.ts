@@ -11,37 +11,31 @@ export interface ServiceSettings {
     rolling?: true;
 }
 export declare type Service_Settings = ServiceSettings;
-export declare function createDefaultSessionStore(userManager: UserManager, expiration: number): SequelizeStore;
+export declare function createDefaultSessionStore(userManager: UserManager, expiration: number, secure: boolean): SequelizeStore;
 export declare class UserService {
     private userManager;
     private user_manager;
     constructor(app: express.Application, userManager: UserManager, settings: ServiceSettings, sessionStore?: any);
+    private _checkLogin(filter, password);
     checkTempPassword(user: User, password: string): Promise<User>;
     checkPassword(password: string, hash: string): Promise<boolean>;
-    private _checkLogin(filter, password);
     checkUsernameOrEmailLogin(request: Request): Promise<UserWithPassword>;
     checkEmailLogin(request: Request): Promise<UserWithPassword>;
     finishLogin(request: Request, user: UserWithPassword): User;
-    login(request: Request): Promise<User>;
-    create_login_handler(): lawn.Response_Generator;
+    loginWithUsername(request: Request): Promise<User>;
     checkTwoFactor(user: User, request: Request): void;
-    create_login_2fa_handler(): lawn.Response_Generator;
-    createLogin2faHandlerWithBackup(): lawn.Response_Generator;
+    login2faWithBackup(request: Request): Promise<User>;
     verify2faOneTimeCode(request: Request, user: User): Promise<boolean>;
     logout(request: Request): Promise<{}>;
-    createLogoutHandler(): lawn.Response_Generator;
-    create_logout_handler(): lawn.Response_Generator;
-    create_get_user_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
     createTempPassword(username: string): Promise<any>;
-    create_login_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
-    create_logout_endpoint(app: any, overrides?: lawn.Optional_Endpoint_Info): void;
-    create_all_endpoints(app: any): void;
     require_logged_in(request: lawn.Request): void;
+    getSanitizedUser(id: string): Promise<User>;
     addUserToRequest(request: Request): Promise<User | undefined>;
     loadValidationHelpers(ajv: any): void;
     fieldExists(request: Request, fieldOptions: string[]): Promise<{
         exists: boolean;
     }>;
+    getModel(): UserManager;
 }
 export declare class User_Service extends UserService {
     constructor(app: express.Application, UserManager: UserManager, settings: ServiceSettings);

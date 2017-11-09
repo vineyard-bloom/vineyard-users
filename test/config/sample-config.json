@@ -3,7 +3,8 @@
     "host": "localhost",
     "database": "vineyard_users",
     "username": "root",
-    "password": ""
+    "password": "",
+    "dialect": "postgres"
   },
   "api": {
     "port":" 3000"

@@ -3,7 +3,7 @@ import * as Sequelize from 'sequelize';
 import { Collection } from "vineyard-ground";
 import { User, UserWithPassword } from "./User";
 export interface Settings {
-    user_model: any;
+    user_model?: any;
     tableKeys?: any;
     model: any;
 }
@@ -23,19 +23,17 @@ export interface Onetimecode {
     available: boolean;
 }
 export declare class UserManager {
-    db: Sequelize.Sequelize;
-    UserModel: Collection<UserWithPassword>;
-    User_Model: Collection<UserWithPassword>;
-    user_model: Collection<UserWithPassword>;
+    private db;
+    private userModel;
     private sessionCollection;
-    tempPasswordCollection: Collection<TempPassword>;
+    private tempPasswordCollection;
     private emailVerificationCollection;
     private oneTimeCodeCollection;
     constructor(db: Sequelize.Sequelize, settings: Settings);
+    getUserModel(): Collection<UserWithPassword>;
     hashPassword(password: string): Promise<string>;
     prepareNewUser(fields: any): Promise<any>;
     prepare_new_user(fields: any): Promise<any>;
-    create_user(fields: any, uniqueField?: string | string[]): Promise<any>;
     createUser(fields: any, uniqueField?: string | string[]): Promise<any>;
     getUser(id: {
         id: string;

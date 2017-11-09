@@ -1,6 +1,9 @@
+/// <reference types="express-session" />
+import { Store } from 'express-session';
 export interface SequelizeStoreOptions {
     expiration: number;
     updateFrequency: number;
+    secure: boolean;
 }
 export interface NewSessionRecord {
     user: string | undefined;
@@ -10,17 +13,13 @@ export interface SessionRecord extends NewSessionRecord {
     sid: string;
 }
 export interface SequelizeSessionRecord extends SessionRecord {
+    dataValues: any;
     destroy: any;
     save: any;
-}
-export interface ExpressCookie {
-    expires: Date;
-}
-export interface ExpressSession {
-    cookie: ExpressCookie;
+    update: any;
 }
 export declare type SimpleCallback = (error: Error) => void;
-export declare class SequelizeStore {
+export declare class SequelizeStore extends Store {
     options: SequelizeStoreOptions;
     sessionModel: any;
     expirationCron: any;
@@ -29,10 +28,15 @@ export declare class SequelizeStore {
     startSessionCron(): void;
     stopSessionCron(): void;
     private determineExpiration(cookie);
-    clear(callback: SimpleCallback): any;
-    destroySession(sid: string, callback: SimpleCallback): any;
-    get(sid: string, callback: (error: Error, session: any) => void): Promise<SessionRecord | undefined>;
-    length(callback: SimpleCallback): any;
-    set(sid: string, data: ExpressSession, callback: SimpleCallback): Promise<any>;
-    touchSession(sid: string, data: ExpressSession, callback: SimpleCallback): any;
+    clear: (callback: (err: any) => void) => void;
+    destroySession(sid: string, callback: SimpleCallback): void;
+    formatCookie(expires: Date): {
+        maxAge: number;
+        secure: boolean;
+        expires: Date;
+    };
+    get: (sid: string, callback: (err: any, session: Express.Session) => void) => void;
+    length: (callback: (err: any, length: number) => void) => void;
+    set: (sid: string, data: Express.Session, callback: (err: any, session: Express.Session) => void) => void;
+    touchSession(sid: string, data: any, callback: SimpleCallback): void;
 }

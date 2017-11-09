@@ -1,11 +1,79 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 var debug = require('debug')('vineyard-session-store');
-var SequelizeStore = (function () {
+var express_session_1 = require("express-session");
+var SequelizeStore = (function (_super) {
+    __extends(SequelizeStore, _super);
     function SequelizeStore(sessionModel, options) {
-        this.sessionModel = sessionModel;
-        this.options = options;
-        this.startSessionCron();
+        var _this = _super.call(this) || this;
+        // Session Interface Implementation
+        _this.clear = function (callback) {
+            _this.sessionModel.destroy({
+                where: {},
+                truncate: true
+            }).asCallback(callback);
+        };
+        _this.get = function (sid, callback) {
+            debug('GET "%s"', sid);
+            _this.sessionModel.find({ where: { sid: sid } })
+                .then(function (session) {
+                if (!session) {
+                    debug('No session with id %s', sid);
+                    return undefined;
+                }
+                debug('FOUND %s', session.sid);
+                return {
+                    user: session.user,
+                    cookie: _this.formatCookie(session.expires)
+                };
+            }).asCallback(callback);
+        };
+        _this.length = function (callback) {
+            _this.sessionModel.count().asCallback(callback);
+        };
+        _this.set = function (sid, data, callback) {
+            debug('INSERT "%s"', sid);
+            var expires = _this.determineExpiration(data.cookie);
+            var defaults = {
+                user: undefined,
+                expires: expires
+            };
+            var values = Object.assign({}, defaults, data);
+            _this.sessionModel.findCreateFind({
+                where: { 'sid': sid },
+                defaults: values
+            }).spread(function (existingRecord) {
+                var existingSession = existingRecord.dataValues;
+                if (existingSession.user != values.user) {
+                    existingSession.user = values.user;
+                    existingSession.expires = expires;
+                    existingSession.cookie = _this.formatCookie(existingSession.expires);
+                    var sql = "\n        UPDATE sessions\n        SET \"user\" = :user\n        WHERE sid = :sid";
+                    return _this.sessionModel.sequelize.query(sql, {
+                        replacements: {
+                            sid: sid,
+                            user: values.user
+                        }
+                    });
+                }
+                existingSession.cookie = _this.formatCookie(existingSession.expires);
+                return existingSession;
+            }).asCallback(callback);
+        };
+        _this.sessionModel = sessionModel;
+        _this.options = options;
+        _this.startSessionCron();
+        return _this;
     }
     SequelizeStore.prototype.deleteExpiredSessions = function (callback) {
         debug('CLEARING EXPIRED SESSIONS');
@@ -29,16 +97,9 @@ var SequelizeStore = (function () {
             ? cookie.expires
             : new Date(Date.now() + this.options.expiration);
     };
-    // Session Interface Implementation
-    SequelizeStore.prototype.clear = function (callback) {
-        return this.sessionModel.destroy({
-            where: {},
-            truncate: true
-        }).asCallback(callback);
-    };
     SequelizeStore.prototype.destroySession = function (sid, callback) {
         debug('Deleting %s', sid);
-        return this.sessionModel.find({ where: { sid: sid } })
+        this.sessionModel.find({ where: { sid: sid } })
             .then(function (session) {
             if (!session) {
                 debug('Could not find session %s', sid);
@@ -47,54 +108,20 @@ var SequelizeStore = (function () {
             return session.destroy();
         }).asCallback(callback);
     };
-    SequelizeStore.prototype.get = function (sid, callback) {
-        debug('Get "%s"', sid);
-        return this.sessionModel.find({ where: { sid: sid } })
-            .then(function (session) {
-            if (!session) {
-                debug('No session with id %s', sid);
-                return undefined;
-            }
-            debug('Found %s', session.sid);
-            return {
-                user: session.user
-            };
-        }).asCallback(callback);
-    };
-    SequelizeStore.prototype.length = function (callback) {
-        return this.sessionModel.count().asCallback(callback);
-    };
-    SequelizeStore.prototype.set = function (sid, data, callback) {
-        debug('INSERT "%s"', sid);
-        var expires = this.determineExpiration(data.cookie);
-        var defaults = {
-            user: undefined,
+    SequelizeStore.prototype.formatCookie = function (expires) {
+        return {
+            maxAge: this.options.expiration,
+            secure: this.options.secure || false,
             expires: expires
         };
-        var values = Object.assign({}, defaults, data);
-        return this.sessionModel.findCreateFind({
-            where: { 'sid': sid },
-            defaults: values
-        }).spread(function sessionCreated(existingSession) {
-            var changed = false;
-            if (existingSession.user != values.user) {
-                existingSession.user = values.user;
-                changed = true;
-            }
-            if (changed) {
-                existingSession.expires = expires;
-                return existingSession.save().return(existingSession);
-            }
-            return existingSession;
-        }).asCallback(callback);
     };
     SequelizeStore.prototype.touchSession = function (sid, data, callback) {
         debug('TOUCH "%s"', sid);
         var expires = this.determineExpiration(data.cookie);
-        return this.sessionModel.update({ expires: expires }, { where: { sid: sid } })
+        this.sessionModel.update({ expires: expires }, { where: { sid: sid } })
             .then(function (rows) { return rows; }).asCallback(callback);
     };
     return SequelizeStore;
-}());
+}(express_session_1.Store));
 exports.SequelizeStore = SequelizeStore;
 //# sourceMappingURL=session-store.js.map

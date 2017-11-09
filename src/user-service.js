@@ -19,18 +19,21 @@ var bcrypt = require('bcrypt');
 function sanitize(user) {
     var result = Object.assign({}, user);
     delete result.password;
+    delete result.two_factor_secret;
     return result;
 }
-function createDefaultSessionStore(userManager, expiration) {
-    return new session_store_1.SequelizeStore(userManager.getSessionCollection(), {
+function createDefaultSessionStore(userManager, expiration, secure) {
+    return new session_store_1.SequelizeStore(userManager.getSessionCollection().getTableClient().getSequelizeModel(), {
         expiration: expiration,
-        updateFrequency: 5 * 60 * 1000
+        updateFrequency: 5 * 60 * 1000,
+        secure: secure,
     });
 }
 exports.createDefaultSessionStore = createDefaultSessionStore;
 var UserService = (function () {
     function UserService(app, userManager, settings, sessionStore) {
-        if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager, settings.cookie.expiration); }
+        if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager, settings.cookie.maxAge, settings.cookie.secure); }
+        var _this = this;
         this.userManager = this.user_manager = userManager;
         if (!settings.secret)
             throw new Error("UserService settings.secret cannot be empty.");
@@ -41,7 +44,43 @@ var UserService = (function () {
             resave: false,
             saveUninitialized: true
         }));
+        // Backwards compatibility
+        var self = this;
+        self.login = function () {
+            return function (request) { return _this.loginWithUsername(request); };
+        };
+        self.create_login_handler = function () {
+            return function (request) { return _this.loginWithUsername(request); };
+        };
+        self.create_login_2fa_handler = function () {
+            return function (request) { return _this.checkUsernameOrEmailLogin(request)
+                .then(function (user) {
+                _this.checkTwoFactor(user, request);
+                return _this.finishLogin(request, user);
+            }); };
+        };
+        self.createLogin2faHandlerWithBackup = function () {
+            return function (request) { return _this.login2faWithBackup(request); };
+        };
+        self.createLogoutHandler = function () {
+            return function (request) { return _this.logout(request); };
+        };
+        self.create_logout_handler = function () {
+            return self.createLogoutHandler();
+        };
     }
+    UserService.prototype._checkLogin = function (filter, password) {
+        var _this = this;
+        return this.userManager.getUserModel().first(filter)
+            .then(function (user) {
+            if (!user)
+                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
+            return bcrypt.compare(password, user.password)
+                .then(function (success) { return success
+                ? user
+                : _this.checkTempPassword(user, password); });
+        });
+    };
     UserService.prototype.checkTempPassword = function (user, password) {
         return this.userManager.matchTempPassword(user, password)
             .then(function (success) {
@@ -52,18 +91,6 @@ var UserService = (function () {
     };
     UserService.prototype.checkPassword = function (password, hash) {
         return bcrypt.compare(password, hash);
-    };
-    UserService.prototype._checkLogin = function (filter, password) {
-        var _this = this;
-        return this.userManager.User_Model.first(filter)
-            .then(function (user) {
-            if (!user)
-                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
-            return bcrypt.compare(password, user.password)
-                .then(function (success) { return success
-                ? user
-                : _this.checkTempPassword(user, password); });
-        });
     };
     UserService.prototype.checkUsernameOrEmailLogin = function (request) {
         var data = request.data;
@@ -80,33 +107,20 @@ var UserService = (function () {
         request.session.user = user.id;
         return sanitize(user);
     };
-    UserService.prototype.login = function (request) {
+    UserService.prototype.loginWithUsername = function (request) {
         var _this = this;
         return this.checkUsernameOrEmailLogin(request)
             .then(function (user) { return _this.finishLogin(request, user); });
-    };
-    UserService.prototype.create_login_handler = function () {
-        var _this = this;
-        return function (request) { return _this.login(request); };
     };
     UserService.prototype.checkTwoFactor = function (user, request) {
         if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
             throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
     };
-    UserService.prototype.create_login_2fa_handler = function () {
+    UserService.prototype.login2faWithBackup = function (request) {
         var _this = this;
-        return function (request) { return _this.checkUsernameOrEmailLogin(request)
+        return this.checkUsernameOrEmailLogin(request)
             .then(function (user) {
-            _this.checkTwoFactor(user, request);
-            return _this.finishLogin(request, user);
-        }); };
-    };
-    UserService.prototype.createLogin2faHandlerWithBackup = function () {
-        var _this = this;
-        var currentUser;
-        return function (request) { return _this.checkUsernameOrEmailLogin(request)
-            .then(function (user) {
-            currentUser = user;
+            var currentUser = user;
             if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
                 return _this.verify2faOneTimeCode(request, currentUser).then(function (backupCodeCheck) {
                     if (!backupCodeCheck)
@@ -114,7 +128,7 @@ var UserService = (function () {
                     return _this.finishLogin(request, currentUser);
                 });
             return _this.finishLogin(request, currentUser);
-        }); };
+        });
     };
     UserService.prototype.verify2faOneTimeCode = function (request, user) {
         var _this = this;
@@ -140,34 +154,9 @@ var UserService = (function () {
         request.session.user = null;
         return Promise.resolve({});
     };
-    // Deprecated
-    UserService.prototype.createLogoutHandler = function () {
-        var _this = this;
-        return function (request) { return _this.logout(request); };
-    };
-    // Deprecated
-    UserService.prototype.create_logout_handler = function () {
-        return this.createLogoutHandler();
-    };
-    UserService.prototype.create_get_user_endpoint = function (app, overrides) {
-        var _this = this;
-        if (overrides === void 0) { overrides = {}; }
-        lawn.create_endpoint_with_defaults(app, {
-            method: vineyard_lawn_1.Method.get,
-            path: "user",
-            action: function (request) {
-                return _this.userManager.getUser(request.session.user)
-                    .then(function (user) {
-                    if (!user)
-                        throw new vineyard_lawn_1.BadRequest("Invalid user ID", { key: 'invalid-user-id' });
-                    return sanitize(user);
-                });
-            }
-        }, overrides);
-    };
     UserService.prototype.createTempPassword = function (username) {
         var _this = this;
-        return this.userManager.user_model.first({ username: username })
+        return this.userManager.getUserModel().first({ username: username })
             .then(function (user) {
             if (!user)
                 throw new vineyard_lawn_1.BadRequest("Invalid username", {
@@ -179,7 +168,7 @@ var UserService = (function () {
                 if (!tempPassword) {
                     var passwordString_1 = Math.random().toString(36).slice(2);
                     return _this.userManager.hashPassword(passwordString_1)
-                        .then(function (hashedPassword) { return _this.userManager.tempPasswordCollection.create({
+                        .then(function (hashedPassword) { return _this.userManager.getTempPasswordCollection().create({
                         user: user,
                         password: hashedPassword
                     }); })
@@ -198,33 +187,14 @@ var UserService = (function () {
             });
         });
     };
-    // Deprecated
-    UserService.prototype.create_login_endpoint = function (app, overrides) {
-        if (overrides === void 0) { overrides = {}; }
-        lawn.create_endpoint_with_defaults(app, {
-            method: vineyard_lawn_1.Method.post,
-            path: "user/login",
-            action: this.create_login_handler()
-        }, overrides);
-    };
-    // Deprecated
-    UserService.prototype.create_logout_endpoint = function (app, overrides) {
-        if (overrides === void 0) { overrides = {}; }
-        lawn.create_endpoint_with_defaults(app, {
-            method: vineyard_lawn_1.Method.post,
-            path: "user/logout",
-            action: this.create_logout_handler()
-        }, overrides);
-    };
-    // Deprecated
-    UserService.prototype.create_all_endpoints = function (app) {
-        this.create_get_user_endpoint(app);
-        this.create_login_endpoint(app);
-        this.create_logout_endpoint(app);
-    };
     UserService.prototype.require_logged_in = function (request) {
         if (!request.session.user)
             throw new lawn.Needs_Login();
+    };
+    UserService.prototype.getSanitizedUser = function (id) {
+        return this.getModel()
+            .getUser(id)
+            .then(sanitize);
     };
     UserService.prototype.addUserToRequest = function (request) {
         if (request.user)
@@ -252,6 +222,9 @@ var UserService = (function () {
             .then(function (result) { return ({
             exists: result
         }); });
+    };
+    UserService.prototype.getModel = function () {
+        return this.userManager;
     };
     return UserService;
 }());

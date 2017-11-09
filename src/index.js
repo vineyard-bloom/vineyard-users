@@ -7,4 +7,5 @@ __export(require("./user-manager"));
 __export(require("./user-service"));
 __export(require("./utility"));
 __export(require("./two-factor"));
+__export(require("./logged-in-preprocessor"));
 //# sourceMappingURL=index.js.map
