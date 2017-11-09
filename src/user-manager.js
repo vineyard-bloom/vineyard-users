@@ -77,10 +77,11 @@ var UserManager = (function () {
                     }
                 },
             });
-            this.sessionCollection = settings.model.Session;
-            this.tempPasswordCollection = settings.model.TempPassword;
-            this.emailVerificationCollection = settings.model.ground.collections.EmailVerification;
-            this.oneTimeCodeCollection = settings.model.ground.collections.Onetimecode;
+            var collections = settings.model.ground.collections;
+            this.sessionCollection = collections.Session;
+            this.tempPasswordCollection = collections.Session;
+            this.emailVerificationCollection = collections.EmailVerification;
+            this.oneTimeCodeCollection = collections.Onetimecode;
         }
         // Backwards compatibility
         self.create_user = this.createUser;

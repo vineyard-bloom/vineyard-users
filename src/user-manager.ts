@@ -104,10 +104,11 @@ export class UserManager {
         },
       })
 
-      this.sessionCollection = settings.model.Session
-      this.tempPasswordCollection = settings.model.TempPassword
-      this.emailVerificationCollection = settings.model.ground.collections.EmailVerification
-      this.oneTimeCodeCollection = settings.model.ground.collections.Onetimecode
+      const collections = settings.model.ground.collections
+      this.sessionCollection = collections.Session
+      this.tempPasswordCollection = collections.Session
+      this.emailVerificationCollection = collections.EmailVerification
+      this.oneTimeCodeCollection = collections.Onetimecode
     }
 
     // Backwards compatibility
