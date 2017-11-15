@@ -5,17 +5,18 @@ import * as lawn from 'vineyard-lawn';
 import * as express from 'express';
 import { User, UserWithPassword } from "./User";
 import { SequelizeStore } from "./session-store";
-export interface ServiceSettings {
+export interface CookieSettings {
     secret: string;
-    cookie: any;
-    rolling?: true;
+    maxAge: number;
+    rolling?: boolean;
+    secure: boolean;
 }
-export declare type Service_Settings = ServiceSettings;
+export declare type Service_Settings = CookieSettings;
 export declare function createDefaultSessionStore(userManager: UserManager, expiration: number, secure: boolean): SequelizeStore;
 export declare class UserService {
     private userManager;
     private user_manager;
-    constructor(app: express.Application, userManager: UserManager, settings: ServiceSettings, sessionStore?: any);
+    constructor(app: express.Application, userManager: UserManager, cookie: CookieSettings, sessionStore?: any);
     private _checkLogin(filter, password);
     checkTempPassword(user: User, password: string): Promise<User>;
     checkPassword(password: string, hash: string): Promise<boolean>;
@@ -38,5 +39,5 @@ export declare class UserService {
     getModel(): UserManager;
 }
 export declare class User_Service extends UserService {
-    constructor(app: express.Application, UserManager: UserManager, settings: ServiceSettings);
+    constructor(app: express.Application, UserManager: UserManager, settings: CookieSettings);
 }

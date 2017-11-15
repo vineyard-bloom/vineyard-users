@@ -10,13 +10,14 @@ import {SequelizeStore} from "./session-store";
 
 const bcrypt = require('bcrypt')
 
-export interface ServiceSettings {
+export interface CookieSettings {
   secret: string
-  cookie: any
-  rolling?: true
+  maxAge: number
+  rolling?: boolean
+  secure: boolean
 }
 
-export type Service_Settings = ServiceSettings
+export type Service_Settings = CookieSettings
 
 function sanitize(user: UserWithPassword): User {
   const result = Object.assign({}, user)
@@ -37,18 +38,18 @@ export class UserService {
   private userManager: UserManager
   private user_manager: UserManager
 
-  constructor(app: express.Application, userManager: UserManager, settings: ServiceSettings,
-              sessionStore: any = createDefaultSessionStore(userManager, settings.cookie.maxAge, settings.cookie.secure)) {
+  constructor(app: express.Application, userManager: UserManager, cookie: CookieSettings,
+              sessionStore: any = createDefaultSessionStore(userManager, cookie.maxAge, cookie.secure)) {
 
     this.userManager = this.user_manager = userManager
 
-    if (!settings.secret)
+    if (!cookie.secret)
       throw new Error("UserService settings.secret cannot be empty.")
 
     app.use(session({
-      secret: settings.secret,
+      secret: cookie.secret,
       store: sessionStore,
-      cookie: settings.cookie,
+      cookie: cookie,
       resave: false,
       saveUninitialized: true
     }))
@@ -274,7 +275,7 @@ export class UserService {
 }
 
 export class User_Service extends UserService {
-  constructor(app: express.Application, UserManager: UserManager, settings: ServiceSettings) {
+  constructor(app: express.Application, UserManager: UserManager, settings: CookieSettings) {
     super(app, UserManager, settings)
   }
 }

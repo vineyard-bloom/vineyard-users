@@ -10,10 +10,8 @@ export class TestServer extends Server {
     super()
     this.userService = new UserService(this.getApp(), userManager, {
       "secret": "test",
-      "cookie": {
-        "maxAge": 900000,
-        "secure": false
-      },
+      "maxAge": 900000,
+      "secure": false,
       "rolling": true
     })
     this.userService.loadValidationHelpers(this.getApiSchema())
