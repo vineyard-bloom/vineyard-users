@@ -1,5 +1,5 @@
 import {Response_Generator, Bad_Request, create_endpoints, Method, Request} from "vineyard-lawn";
-import {ValidationCompiler} from "../../vineyard-lawn/source/types";
+import {ValidationCompiler} from "vineyard-lawn";
 
 const speakeasy = require("speakeasy")
 
