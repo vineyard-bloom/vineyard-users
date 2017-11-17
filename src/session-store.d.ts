@@ -1,6 +1,6 @@
 /// <reference types="express-session" />
 import { Store } from 'express-session';
-export interface SequelizeStoreOptions {
+export interface SequelizeStoreConfig {
     expiration: number;
     updateFrequency: number;
     secure: boolean;
@@ -20,10 +20,10 @@ export interface SequelizeSessionRecord extends SessionRecord {
 }
 export declare type SimpleCallback = (error: Error) => void;
 export declare class SequelizeStore extends Store {
-    options: SequelizeStoreOptions;
+    config: SequelizeStoreConfig;
     sessionModel: any;
     expirationCron: any;
-    constructor(sessionModel: any, options: SequelizeStoreOptions);
+    constructor(sessionModel: any, config: SequelizeStoreConfig);
     private deleteExpiredSessions(callback);
     startSessionCron(): void;
     stopSessionCron(): void;

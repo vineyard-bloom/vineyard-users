@@ -13,7 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var utility_1 = require("./utility");
 var errors_1 = require("vineyard-lawn/source/errors");
 var bcrypt = require('bcrypt');
-var UserManager = (function () {
+var UserManager = /** @class */ (function () {
     function UserManager(db, settings) {
         this.db = db;
         if (!settings)
@@ -281,7 +281,7 @@ var UserManager = (function () {
     return UserManager;
 }());
 exports.UserManager = UserManager;
-var User_Manager = (function (_super) {
+var User_Manager = /** @class */ (function (_super) {
     __extends(User_Manager, _super);
     function User_Manager(db, settings) {
         return _super.call(this, db, settings) || this;

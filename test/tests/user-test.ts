@@ -35,7 +35,7 @@ async function assertSessionCount(userManager: UserManager, count: number) {
 
 describe('user-test', function () {
   let server: any
-  this.timeout(5000)
+  this.timeout(9000)
 
   after(function () {
     // return server.stop()

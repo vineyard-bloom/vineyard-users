@@ -30,17 +30,17 @@ function createDefaultSessionStore(userManager, expiration, secure) {
     });
 }
 exports.createDefaultSessionStore = createDefaultSessionStore;
-var UserService = (function () {
-    function UserService(app, userManager, settings, sessionStore) {
-        if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager, settings.cookie.maxAge, settings.cookie.secure); }
+var UserService = /** @class */ (function () {
+    function UserService(app, userManager, cookie, sessionStore) {
+        if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager, cookie.maxAge, cookie.secure); }
         var _this = this;
         this.userManager = this.user_manager = userManager;
-        if (!settings.secret)
+        if (!cookie.secret)
             throw new Error("UserService settings.secret cannot be empty.");
         app.use(session({
-            secret: settings.secret,
+            secret: cookie.secret,
             store: sessionStore,
-            cookie: settings.cookie,
+            cookie: cookie,
             resave: false,
             saveUninitialized: true
         }));
@@ -229,7 +229,7 @@ var UserService = (function () {
     return UserService;
 }());
 exports.UserService = UserService;
-var User_Service = (function (_super) {
+var User_Service = /** @class */ (function (_super) {
     __extends(User_Service, _super);
     function User_Service(app, UserManager, settings) {
         return _super.call(this, app, UserManager, settings) || this;

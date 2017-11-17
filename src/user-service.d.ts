@@ -1,4 +1,3 @@
-/// <reference types="express" />
 import { UserManager } from "./user-manager";
 import { Request } from 'vineyard-lawn';
 import * as lawn from 'vineyard-lawn';

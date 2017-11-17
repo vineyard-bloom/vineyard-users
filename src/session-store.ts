@@ -1,7 +1,7 @@
 const debug = require('debug')('vineyard-session-store')
 import {Store} from 'express-session'
 
-export interface SequelizeStoreOptions {
+export interface SequelizeStoreConfig {
   expiration: number
   updateFrequency: number
   secure: boolean
@@ -26,14 +26,17 @@ export interface SequelizeSessionRecord extends SessionRecord {
 export type SimpleCallback = (error: Error) => void
 
 export class SequelizeStore extends Store {
-  options: SequelizeStoreOptions
+  config: SequelizeStoreConfig
   sessionModel: any
   expirationCron: any
 
-  constructor(sessionModel: any, options: SequelizeStoreOptions) {
+  constructor(sessionModel: any, config: SequelizeStoreConfig) {
     super()
     this.sessionModel = sessionModel
-    this.options = options
+    if (typeof config.expiration != 'number')
+      throw new Error("Cookie expiration must be set to a number of milliseconds.")
+
+    this.config = config
     this.startSessionCron()
   }
 
@@ -44,9 +47,9 @@ export class SequelizeStore extends Store {
 
   public startSessionCron() {
     this.stopSessionCron()
-    if (this.options.updateFrequency > 0) {
+    if (this.config.updateFrequency > 0) {
       this.expirationCron = setInterval((callback: SimpleCallback) => this.deleteExpiredSessions(callback),
-        this.options.updateFrequency
+        this.config.updateFrequency
       )
     }
   }
@@ -61,7 +64,7 @@ export class SequelizeStore extends Store {
   private determineExpiration(cookie: any | undefined): Date {
     return cookie && cookie.expires
       ? cookie.expires
-      : new Date(Date.now() + this.options.expiration)
+      : new Date(Date.now() + this.config.expiration)
   }
 
   // Session Interface Implementation
@@ -87,8 +90,8 @@ export class SequelizeStore extends Store {
 
   formatCookie(expires: Date) {
     return {
-      maxAge: this.options.expiration,
-      secure: this.options.secure || false,
+      maxAge: this.config.expiration,
+      secure: this.config.secure || false,
       expires: expires
     }
   }

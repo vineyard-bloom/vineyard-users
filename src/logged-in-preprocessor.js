@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var vineyard_lawn_1 = require("vineyard-lawn");
-var LoggedInPreprocessor = (function (_super) {
+var LoggedInPreprocessor = /** @class */ (function (_super) {
     __extends(LoggedInPreprocessor, _super);
     function LoggedInPreprocessor(versions) {
         return _super.call(this, versions) || this;

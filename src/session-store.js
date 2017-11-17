@@ -12,9 +12,9 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var debug = require('debug')('vineyard-session-store');
 var express_session_1 = require("express-session");
-var SequelizeStore = (function (_super) {
+var SequelizeStore = /** @class */ (function (_super) {
     __extends(SequelizeStore, _super);
-    function SequelizeStore(sessionModel, options) {
+    function SequelizeStore(sessionModel, config) {
         var _this = _super.call(this) || this;
         // Session Interface Implementation
         _this.clear = function (callback) {
@@ -71,7 +71,9 @@ var SequelizeStore = (function (_super) {
             }).asCallback(callback);
         };
         _this.sessionModel = sessionModel;
-        _this.options = options;
+        if (typeof config.expiration != 'number')
+            throw new Error("Cookie expiration must be set to a number of milliseconds.");
+        _this.config = config;
         _this.startSessionCron();
         return _this;
     }
@@ -82,8 +84,8 @@ var SequelizeStore = (function (_super) {
     SequelizeStore.prototype.startSessionCron = function () {
         var _this = this;
         this.stopSessionCron();
-        if (this.options.updateFrequency > 0) {
-            this.expirationCron = setInterval(function (callback) { return _this.deleteExpiredSessions(callback); }, this.options.updateFrequency);
+        if (this.config.updateFrequency > 0) {
+            this.expirationCron = setInterval(function (callback) { return _this.deleteExpiredSessions(callback); }, this.config.updateFrequency);
         }
     };
     SequelizeStore.prototype.stopSessionCron = function () {
@@ -95,7 +97,7 @@ var SequelizeStore = (function (_super) {
     SequelizeStore.prototype.determineExpiration = function (cookie) {
         return cookie && cookie.expires
             ? cookie.expires
-            : new Date(Date.now() + this.options.expiration);
+            : new Date(Date.now() + this.config.expiration);
     };
     SequelizeStore.prototype.destroySession = function (sid, callback) {
         debug('Deleting %s', sid);
@@ -110,8 +112,8 @@ var SequelizeStore = (function (_super) {
     };
     SequelizeStore.prototype.formatCookie = function (expires) {
         return {
-            maxAge: this.options.expiration,
-            secure: this.options.secure || false,
+            maxAge: this.config.expiration,
+            secure: this.config.secure || false,
             expires: expires
         };
     };
