@@ -5,7 +5,7 @@ import {Bad_Request, Request, BadRequest} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as two_factor from './two-factor'
-import {User, UserWithPassword} from "./User";
+import {UserWithUsername, UserWithPassword, BaseUser} from "./User";
 import {SequelizeStore} from "./session-store";
 
 const bcrypt = require('bcrypt')
@@ -19,10 +19,10 @@ export interface CookieSettings {
 
 export type Service_Settings = CookieSettings
 
-function sanitize(user: UserWithPassword): User {
+function sanitize(user: UserWithPassword): UserWithUsername {
   const result = Object.assign({}, user)
   delete result.password
-  delete result.two_factor_secret
+  delete result.twoFactorSecret
   return result
 }
 
@@ -32,6 +32,21 @@ export function createDefaultSessionStore(userManager: UserManager, expiration: 
     updateFrequency: 5 * 60 * 1000,
     secure: secure,
   })
+}
+
+// For backwards compatibility
+function getTwoFactorEnabled(user: BaseUser): boolean {
+  if (typeof user.twoFactorEnabled == 'boolean')
+    return user.twoFactorEnabled
+
+  return !!(user as any).two_factor_enabled
+}
+
+function getTwoFactorSecret(user: BaseUser): string {
+  if (typeof user.twoFactorSecret == 'string')
+    return user.twoFactorSecret
+
+  return (user as any).two_factor_secret || ''
 }
 
 export class UserService {
@@ -99,7 +114,7 @@ export class UserService {
       })
   }
 
-  checkTempPassword(user: User, password: string) {
+  checkTempPassword(user: UserWithUsername, password: string) {
     return this.userManager.matchTempPassword(user, password)
       .then(success => {
         if (!success)
@@ -138,8 +153,8 @@ export class UserService {
       .then(user => this.finishLogin(request, user))
   }
 
-  checkTwoFactor(user: User, request: Request) {
-    if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+  checkTwoFactor(user: UserWithUsername, request: Request) {
+    if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
       throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
   }
 
@@ -147,7 +162,7 @@ export class UserService {
     return this.checkUsernameOrEmailLogin(request)
       .then(user => {
         const currentUser = user
-        if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+        if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
           return this.verify2faOneTimeCode(request, currentUser).then(backupCodeCheck => {
             if (!backupCodeCheck)
               throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
@@ -157,7 +172,7 @@ export class UserService {
       })
   }
 
-  verify2faOneTimeCode(request: Request, user: User): Promise<boolean> {
+  verify2faOneTimeCode(request: Request, user: UserWithUsername): Promise<boolean> {
     return this.userManager.getUserOneTimeCode(user).then((code: Onetimecode | undefined) => {
       if (!code) {
         return false
@@ -228,13 +243,13 @@ export class UserService {
       throw new lawn.Needs_Login()
   }
 
-  getSanitizedUser(id: string): Promise<User> {
+  getSanitizedUser(id: string): Promise<UserWithUsername> {
     return this.getModel()
       .getUser(id)
       .then(sanitize)
   }
 
-  addUserToRequest(request: Request): Promise<User | undefined> {
+  addUserToRequest(request: Request): Promise<UserWithUsername | undefined> {
     if (request.user)
       return Promise.resolve(request.user)
 

@@ -3,18 +3,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var vineyard_lawn_1 = require("vineyard-lawn");
 var speakeasy = require("speakeasy");
 var window = 2;
-function get_2fa_token() {
+function createTwoFactorSecretResponse() {
     return function (request) {
         var secret = speakeasy.generateSecret();
-        request.session.two_factor_secret = secret.base32;
         return Promise.resolve({
             secret: secret.base32,
             secret_url: secret.otpauth_url // deprecated
         });
     };
 }
-exports.get_2fa_token = get_2fa_token;
-function verify_2fa_token(secret, token) {
+exports.createTwoFactorSecretResponse = createTwoFactorSecretResponse;
+module.exports.get_2fa_token = createTwoFactorSecretResponse;
+function verifyTwoFactorToken(secret, token) {
     return speakeasy.totp.verify({
         secret: secret,
         encoding: 'base32',
@@ -22,36 +22,29 @@ function verify_2fa_token(secret, token) {
         window: window
     });
 }
-exports.verify_2fa_token = verify_2fa_token;
-function verify_2fa_request(request) {
-    var two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret;
-    if (!two_factor_secret)
+exports.verifyTwoFactorToken = verifyTwoFactorToken;
+module.exports.verify_2fa_token = verifyTwoFactorToken;
+function verifyTwoFactorRequest(request) {
+    var twoFactorSecret = request.data.twoFactorSecret;
+    if (!twoFactorSecret)
         throw new vineyard_lawn_1.Bad_Request("Two Factor secret must be generated before verifying.", { key: "no-2-fa" });
-    if (verify_2fa_token(two_factor_secret, request.data.twoFactorToken || request.data.twoFactor)) {
-        return two_factor_secret;
+    if (verifyTwoFactorToken(twoFactorSecret, request.data.twoFactorToken || request.data.twoFactor)) {
+        return twoFactorSecret;
     }
     throw new vineyard_lawn_1.Bad_Request("Invalid Two Factor secret.", { key: "invalid-2fa" });
 }
-exports.verify_2fa_request = verify_2fa_request;
-function verify_2fa_token_handler() {
+exports.verifyTwoFactorRequest = verifyTwoFactorRequest;
+module.exports.verify_2fa_request = verifyTwoFactorRequest;
+function verifyTwoFactorTokenHandler() {
     return function (request) {
-        verify_2fa_request(request);
+        verifyTwoFactorRequest(request);
         return Promise.resolve({
             message: "Verification succeeded."
         });
     };
 }
-exports.verify_2fa_token_handler = verify_2fa_token_handler;
-function verify_token_and_save(user_model) {
-    return function (request) {
-        var secret = verify_2fa_request(request);
-        return user_model.update(request.session.user, {
-            two_factor_enabled: true,
-            two_factor_secret: request.session.two_factor_secret
-        });
-    };
-}
-exports.verify_token_and_save = verify_token_and_save;
+exports.verifyTwoFactorTokenHandler = verifyTwoFactorTokenHandler;
+module.exports.verify_2fa_token_handler = verifyTwoFactorTokenHandler;
 function getTwoFactorToken(secret) {
     return speakeasy.totp({
         secret: secret,
@@ -59,7 +52,7 @@ function getTwoFactorToken(secret) {
     });
 }
 exports.getTwoFactorToken = getTwoFactorToken;
-var TwoFactorEndpoints = /** @class */ (function () {
+var TwoFactorEndpoints = (function () {
     function TwoFactorEndpoints(compiler) {
         this.validators = compiler.compileApiSchema(require('./validation/two-factor.json'));
     }
@@ -67,7 +60,7 @@ var TwoFactorEndpoints = /** @class */ (function () {
         return {
             method: vineyard_lawn_1.Method.get,
             path: "user/2fa",
-            action: get_2fa_token(),
+            action: createTwoFactorSecretResponse(),
             validator: this.validators.empty
         };
     };
@@ -75,7 +68,7 @@ var TwoFactorEndpoints = /** @class */ (function () {
         return {
             method: vineyard_lawn_1.Method.post,
             path: "user/2fa",
-            action: verify_2fa_token_handler(),
+            action: verifyTwoFactorTokenHandler(),
             validator: this.validators.verifyTwoFactor
         };
     };

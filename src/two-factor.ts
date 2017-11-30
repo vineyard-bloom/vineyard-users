@@ -5,18 +5,18 @@ const speakeasy = require("speakeasy")
 
 const window = 2
 
-export function get_2fa_token(): Response_Generator {
+export function createTwoFactorSecretResponse(): Response_Generator {
   return request => {
     const secret = speakeasy.generateSecret()
-    request.session.two_factor_secret = secret.base32
     return Promise.resolve({
       secret: secret.base32,
       secret_url: secret.otpauth_url // deprecated
     })
   }
 }
+module.exports.get_2fa_token = createTwoFactorSecretResponse
 
-export function verify_2fa_token(secret: string, token: string): boolean {
+export function verifyTwoFactorToken(secret: string, token: string): boolean {
   return speakeasy.totp.verify({
     secret: secret,
     encoding: 'base32',
@@ -24,38 +24,31 @@ export function verify_2fa_token(secret: string, token: string): boolean {
     window: window
   })
 }
+module.exports.verify_2fa_token = verifyTwoFactorToken
 
-export function verify_2fa_request(request: Request): string {
-  const two_factor_secret = request.data.twoFactorSecret || request.session.two_factor_secret
+export function verifyTwoFactorRequest(request: Request): string {
+  const twoFactorSecret = request.data.twoFactorSecret
 
-  if (!two_factor_secret)
+  if (!twoFactorSecret)
     throw new Bad_Request("Two Factor secret must be generated before verifying.", {key: "no-2-fa"})
 
-  if (verify_2fa_token(two_factor_secret, request.data.twoFactorToken || request.data.twoFactor)) {
-    return two_factor_secret
+  if (verifyTwoFactorToken(twoFactorSecret, request.data.twoFactorToken || request.data.twoFactor)) {
+    return twoFactorSecret
   }
 
   throw new Bad_Request("Invalid Two Factor secret.", {key: "invalid-2fa"})
 }
+module.exports.verify_2fa_request = verifyTwoFactorRequest
 
-export function verify_2fa_token_handler(): Response_Generator {
+export function verifyTwoFactorTokenHandler(): Response_Generator {
   return request => {
-    verify_2fa_request(request)
+    verifyTwoFactorRequest(request)
     return Promise.resolve({
       message: "Verification succeeded."
     })
   }
 }
-
-export function verify_token_and_save(user_model: any): Response_Generator {
-  return request => {
-    const secret = verify_2fa_request(request)
-    return user_model.update(request.session.user, {
-      two_factor_enabled: true,
-      two_factor_secret: request.session.two_factor_secret
-    })
-  }
-}
+module.exports.verify_2fa_token_handler = verifyTwoFactorTokenHandler
 
 export function getTwoFactorToken(secret: string) {
   return speakeasy.totp({
@@ -75,7 +68,7 @@ export class TwoFactorEndpoints {
     return {
       method: Method.get,
       path: "user/2fa",
-      action: get_2fa_token(),
+      action: createTwoFactorSecretResponse(),
       validator: this.validators.empty
     }
   }
@@ -84,7 +77,7 @@ export class TwoFactorEndpoints {
     return {
       method: Method.post,
       path: "user/2fa",
-      action: verify_2fa_token_handler(),
+      action: verifyTwoFactorTokenHandler(),
       validator: this.validators.verifyTwoFactor
     }
   }

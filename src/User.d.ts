@@ -2,14 +2,17 @@ export interface Role {
     id: number;
     name: string;
 }
-export interface User {
+export interface BaseUser {
     id: string;
-    username: string;
-    two_factor_secret: string;
-    two_factor_enabled: boolean;
+    email: string;
+    twoFactorSecret: string;
+    twoFactorEnabled: boolean;
     roles: Role[];
     [key: string]: any;
 }
-export interface UserWithPassword extends User {
+export interface UserWithUsername extends BaseUser {
+    username: string;
+}
+export interface UserWithPassword extends UserWithUsername {
     password: string;
 }

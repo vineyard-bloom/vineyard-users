@@ -1,7 +1,7 @@
 import * as Sequelize from 'sequelize'
 import {promiseEach} from "./utility";
 import {Collection, QueryBuilder} from "vineyard-ground"
-import {User, UserWithPassword} from "./User"
+import {UserWithUsername, UserWithPassword} from "./User"
 import {BadRequest} from "vineyard-lawn/source/errors";
 
 const bcrypt = require('bcrypt');
@@ -177,7 +177,7 @@ export class UserManager {
     return new Date() > expirationDate
   }
 
-  matchTempPassword(user: User, password: string): Promise<boolean> {
+  matchTempPassword(user: UserWithUsername, password: string): Promise<boolean> {
     if (!this.tempPasswordCollection)
       return Promise.resolve(false)
 
@@ -224,7 +224,7 @@ export class UserManager {
       })
   }
 
-  private _createTempPassword(user: User): Promise<any> {
+  private _createTempPassword(user: UserWithUsername): Promise<any> {
     return this.getTempPassword(user)
       .then(tempPassword => {
         if (!tempPassword) {
@@ -247,7 +247,7 @@ export class UserManager {
       })
   }
 
-  createTempPassword(username: string | User): Promise<any> {
+  createTempPassword(username: string | UserWithUsername): Promise<any> {
     if (typeof username == 'string') {
       return this.getUserFromUsername(username)
         .then(user => this._createTempPassword(user))
@@ -257,7 +257,7 @@ export class UserManager {
     }
   }
 
-  createEmailCode(user: User): Promise<any> {
+  createEmailCode(user: UserWithUsername): Promise<any> {
     return this.getEmailCode(user)
       .then(emailCode => {
         if (!emailCode) {
@@ -295,15 +295,15 @@ export class UserManager {
       })
   }
 
-  getEmailCode(user: User) {
+  getEmailCode(user: UserWithUsername) {
     return this.emailVerificationCollection.first({user: user.id}).exec()
   }
 
-  getTempPassword(user: User) {
+  getTempPassword(user: UserWithUsername) {
     return this.tempPasswordCollection.first({user: user.id}).exec()
   }
 
-  getUserOneTimeCode(user: User): Promise<Onetimecode | undefined> {
+  getUserOneTimeCode(user: UserWithUsername): Promise<Onetimecode | undefined> {
     return this.oneTimeCodeCollection.first({user: user.id, available: true}).exec()
   }
 
@@ -311,7 +311,7 @@ export class UserManager {
     const filter: any = {}
     filter[key] = value
     return this.userModel.first(filter).exec()
-      .then((user?: User) => !!user)
+      .then((user?: UserWithUsername) => !!user)
   }
 
   compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode): Promise<boolean> {
@@ -322,7 +322,7 @@ export class UserManager {
     return this.oneTimeCodeCollection.update(oneTimeCode, {available: false})
   }
 
-  checkUniqueness(user: User, field = 'username') {
+  checkUniqueness(user: UserWithUsername, field = 'username') {
     return this.fieldExists(field, user[field])
       .then(result => {
         if (result) {

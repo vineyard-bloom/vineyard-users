@@ -1,8 +1,8 @@
-import {Role, User} from "./User";
+import {Role, UserWithUsername} from "./User";
 
 export type Role_Id_Parameter = Role | number
 
-export function has_role(user: User, role: Role_Id_Parameter) {
+export function has_role(user: UserWithUsername, role: Role_Id_Parameter) {
   let role_id: number
   if (typeof role == 'number') {
     role_id = role
@@ -24,7 +24,7 @@ export function has_role(user: User, role: Role_Id_Parameter) {
   return false
 }
 
-export function has_any_role(user: User, roles: Role_Id_Parameter[]) {
+export function has_any_role(user: UserWithUsername, roles: Role_Id_Parameter[]) {
   for (let i = 0; i < roles.length; ++i) {
     if (has_role(user, roles[i]))
       return true

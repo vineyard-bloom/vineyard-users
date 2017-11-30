@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var src_1 = require("../src");
-var UserClient = /** @class */ (function () {
+var UserClient = (function () {
     function UserClient(webClient, info) {
         this.webClient = webClient;
         if (info) {

@@ -12,7 +12,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var debug = require('debug')('vineyard-session-store');
 var express_session_1 = require("express-session");
-var SequelizeStore = /** @class */ (function (_super) {
+var SequelizeStore = (function (_super) {
     __extends(SequelizeStore, _super);
     function SequelizeStore(sessionModel, config) {
         var _this = _super.call(this) || this;

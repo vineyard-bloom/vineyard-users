@@ -19,7 +19,7 @@ var bcrypt = require('bcrypt');
 function sanitize(user) {
     var result = Object.assign({}, user);
     delete result.password;
-    delete result.two_factor_secret;
+    delete result.twoFactorSecret;
     return result;
 }
 function createDefaultSessionStore(userManager, expiration, secure) {
@@ -30,7 +30,18 @@ function createDefaultSessionStore(userManager, expiration, secure) {
     });
 }
 exports.createDefaultSessionStore = createDefaultSessionStore;
-var UserService = /** @class */ (function () {
+// For backwards compatibility
+function getTwoFactorEnabled(user) {
+    if (typeof user.twoFactorEnabled == 'boolean')
+        return user.twoFactorEnabled;
+    return !!user.two_factor_enabled;
+}
+function getTwoFactorSecret(user) {
+    if (typeof user.twoFactorSecret == 'string')
+        return user.twoFactorSecret;
+    return user.two_factor_secret || '';
+}
+var UserService = (function () {
     function UserService(app, userManager, cookie, sessionStore) {
         if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager, cookie.maxAge, cookie.secure); }
         var _this = this;
@@ -113,7 +124,7 @@ var UserService = /** @class */ (function () {
             .then(function (user) { return _this.finishLogin(request, user); });
     };
     UserService.prototype.checkTwoFactor = function (user, request) {
-        if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+        if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
             throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
     };
     UserService.prototype.login2faWithBackup = function (request) {
@@ -121,7 +132,7 @@ var UserService = /** @class */ (function () {
         return this.checkUsernameOrEmailLogin(request)
             .then(function (user) {
             var currentUser = user;
-            if (user.two_factor_enabled && !two_factor.verify_2fa_token(user.two_factor_secret, request.data.twoFactor))
+            if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
                 return _this.verify2faOneTimeCode(request, currentUser).then(function (backupCodeCheck) {
                     if (!backupCodeCheck)
                         throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
@@ -229,7 +240,7 @@ var UserService = /** @class */ (function () {
     return UserService;
 }());
 exports.UserService = UserService;
-var User_Service = /** @class */ (function (_super) {
+var User_Service = (function (_super) {
     __extends(User_Service, _super);
     function User_Service(app, UserManager, settings) {
         return _super.call(this, app, UserManager, settings) || this;
