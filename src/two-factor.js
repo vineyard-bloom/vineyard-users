@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var vineyard_lawn_1 = require("vineyard-lawn");
-var speakeasy = require("speakeasy");
-var window = 2;
+const vineyard_lawn_1 = require("vineyard-lawn");
+const speakeasy = require("speakeasy");
+const window = 2;
 function createTwoFactorSecretResponse() {
-    return function (request) {
-        var secret = speakeasy.generateSecret();
+    return request => {
+        const secret = speakeasy.generateSecret();
         return Promise.resolve({
             secret: secret.base32,
             secret_url: secret.otpauth_url // deprecated
@@ -25,7 +25,7 @@ function verifyTwoFactorToken(secret, token) {
 exports.verifyTwoFactorToken = verifyTwoFactorToken;
 module.exports.verify_2fa_token = verifyTwoFactorToken;
 function verifyTwoFactorRequest(request) {
-    var twoFactorSecret = request.data.twoFactorSecret;
+    const twoFactorSecret = request.data.twoFactorSecret;
     if (!twoFactorSecret)
         throw new vineyard_lawn_1.Bad_Request("Two Factor secret must be generated before verifying.", { key: "no-2-fa" });
     if (verifyTwoFactorToken(twoFactorSecret, request.data.twoFactorToken || request.data.twoFactor)) {
@@ -36,7 +36,7 @@ function verifyTwoFactorRequest(request) {
 exports.verifyTwoFactorRequest = verifyTwoFactorRequest;
 module.exports.verify_2fa_request = verifyTwoFactorRequest;
 function verifyTwoFactorTokenHandler() {
-    return function (request) {
+    return request => {
         verifyTwoFactorRequest(request);
         return Promise.resolve({
             message: "Verification succeeded."
@@ -52,34 +52,33 @@ function getTwoFactorToken(secret) {
     });
 }
 exports.getTwoFactorToken = getTwoFactorToken;
-var TwoFactorEndpoints = (function () {
-    function TwoFactorEndpoints(compiler) {
+class TwoFactorEndpoints {
+    constructor(compiler) {
         this.validators = compiler.compileApiSchema(require('./validation/two-factor.json'));
     }
-    TwoFactorEndpoints.prototype.getNewSecret = function () {
+    getNewSecret() {
         return {
             method: vineyard_lawn_1.Method.get,
             path: "user/2fa",
             action: createTwoFactorSecretResponse(),
             validator: this.validators.empty
         };
-    };
-    TwoFactorEndpoints.prototype.verifyToken = function () {
+    }
+    verifyToken() {
         return {
             method: vineyard_lawn_1.Method.post,
             path: "user/2fa",
             action: verifyTwoFactorTokenHandler(),
             validator: this.validators.verifyTwoFactor
         };
-    };
-    TwoFactorEndpoints.prototype.getValidators = function () {
+    }
+    getValidators() {
         return this.validators;
-    };
-    return TwoFactorEndpoints;
-}());
+    }
+}
 exports.TwoFactorEndpoints = TwoFactorEndpoints;
 function initializeTwoFactor(server) {
-    var endpoints = new TwoFactorEndpoints(server);
+    const endpoints = new TwoFactorEndpoints(server);
     server.createPublicEndpoints([
         endpoints.getNewSecret(),
         endpoints.verifyToken(),

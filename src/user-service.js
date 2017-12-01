@@ -1,23 +1,21 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-var session = require('express-session');
-var vineyard_lawn_1 = require("vineyard-lawn");
-var lawn = require("vineyard-lawn");
-var two_factor = require("./two-factor");
-var session_store_1 = require("./session-store");
-var bcrypt = require('bcrypt');
+const session = require('express-session');
+const vineyard_lawn_1 = require("vineyard-lawn");
+const lawn = require("vineyard-lawn");
+const two_factor = require("./two-factor");
+const session_store_1 = require("./session-store");
+const bcrypt = require('bcrypt');
 function sanitize(user) {
-    var result = Object.assign({}, user);
+    const result = Object.assign({}, user);
     delete result.password;
     delete result.twoFactorSecret;
     return result;
@@ -41,10 +39,8 @@ function getTwoFactorSecret(user) {
         return user.twoFactorSecret;
     return user.two_factor_secret || '';
 }
-var UserService = (function () {
-    function UserService(app, userManager, cookie, sessionStore) {
-        if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager, cookie.maxAge, cookie.secure); }
-        var _this = this;
+class UserService {
+    constructor(app, userManager, cookie, sessionStore = createDefaultSessionStore(userManager, cookie.maxAge, cookie.secure)) {
         this.userManager = this.user_manager = userManager;
         if (!cookie.secret)
             throw new Error("UserService settings.secret cannot be empty.");
@@ -56,136 +52,139 @@ var UserService = (function () {
             saveUninitialized: true
         }));
         // Backwards compatibility
-        var self = this;
-        self.login = function () {
-            return function (request) { return _this.loginWithUsername(request); };
+        const self = this;
+        self.login = () => {
+            return (request) => this.loginWithUsername(request);
         };
-        self.create_login_handler = function () {
-            return function (request) { return _this.loginWithUsername(request); };
+        self.create_login_handler = () => {
+            return (request) => this.loginWithUsername(request);
         };
-        self.create_login_2fa_handler = function () {
-            return function (request) { return _this.checkUsernameOrEmailLogin(request)
-                .then(function (user) {
-                _this.checkTwoFactor(user, request);
-                return _this.finishLogin(request, user);
-            }); };
+        self.create_login_2fa_handler = () => {
+            return (request) => this.checkUsernameOrEmailLogin(request)
+                .then(user => {
+                this.checkTwoFactor(user, request);
+                return this.finishLogin(request, user);
+            });
         };
-        self.createLogin2faHandlerWithBackup = function () {
-            return function (request) { return _this.login2faWithBackup(request); };
+        self.createLogin2faHandlerWithBackup = () => {
+            return (request) => this.login2faWithBackup(request);
         };
-        self.createLogoutHandler = function () {
-            return function (request) { return _this.logout(request); };
+        self.createLogoutHandler = () => {
+            return (request) => this.logout(request);
         };
-        self.create_logout_handler = function () {
+        self.create_logout_handler = () => {
             return self.createLogoutHandler();
         };
     }
-    UserService.prototype._checkLogin = function (filter, password) {
-        var _this = this;
+    _checkLogin(filter, password) {
         return this.userManager.getUserModel().first(filter)
-            .then(function (user) {
+            .then(user => {
             if (!user)
-                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
+                throw new vineyard_lawn_1.Bad_Request('Invalid credentials.', { key: 'invalid-credentials' });
             return bcrypt.compare(password, user.password)
-                .then(function (success) { return success
+                .then((success) => success
                 ? user
-                : _this.checkTempPassword(user, password); });
+                : this.checkTempPassword(user, password));
         });
-    };
-    UserService.prototype.checkTempPassword = function (user, password) {
+    }
+    checkTempPassword(user, password) {
         return this.userManager.matchTempPassword(user, password)
-            .then(function (success) {
+            .then(success => {
             if (!success)
-                throw new vineyard_lawn_1.Bad_Request('Incorrect username or password.', { key: 'invalid-credentials' });
+                throw new vineyard_lawn_1.Bad_Request('Invalid credentials.', { key: 'invalid-credentials' });
             return user;
         });
-    };
-    UserService.prototype.checkPassword = function (password, hash) {
+    }
+    checkPassword(password, hash) {
         return bcrypt.compare(password, hash);
-    };
-    UserService.prototype.checkUsernameOrEmailLogin = function (request) {
-        var data = request.data;
-        var filter = data.username
+    }
+    checkUsernameOrEmailLogin(request) {
+        const data = request.data;
+        const filter = data.username
             ? { username: data.username }
             : { email: data.email };
         return this._checkLogin(filter, data.password);
-    };
-    UserService.prototype.checkEmailLogin = function (request) {
-        var data = request.data;
+    }
+    checkEmailLogin(request) {
+        const data = request.data;
         return this._checkLogin({ email: data.email }, data.password);
-    };
-    UserService.prototype.finishLogin = function (request, user) {
+    }
+    finishLogin(request, user) {
         request.session.user = user.id;
         return sanitize(user);
-    };
-    UserService.prototype.loginWithUsername = function (request) {
-        var _this = this;
+    }
+    loginWithUsername(request) {
         return this.checkUsernameOrEmailLogin(request)
-            .then(function (user) { return _this.finishLogin(request, user); });
-    };
-    UserService.prototype.checkTwoFactor = function (user, request) {
+            .then(user => this.finishLogin(request, user));
+    }
+    checkTwoFactor(user, request) {
         if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
             throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
-    };
-    UserService.prototype.login2faWithBackup = function (request) {
-        var _this = this;
+    }
+    login2faWithBackup(request) {
         return this.checkUsernameOrEmailLogin(request)
-            .then(function (user) {
-            var currentUser = user;
+            .then(user => {
+            const currentUser = user;
             if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
-                return _this.verify2faOneTimeCode(request, currentUser).then(function (backupCodeCheck) {
+                return this.verify2faOneTimeCode(request, currentUser).then(backupCodeCheck => {
                     if (!backupCodeCheck)
                         throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
-                    return _this.finishLogin(request, currentUser);
+                    return this.finishLogin(request, currentUser);
                 });
-            return _this.finishLogin(request, currentUser);
+            return this.finishLogin(request, currentUser);
         });
-    };
-    UserService.prototype.verify2faOneTimeCode = function (request, user) {
-        var _this = this;
-        return this.userManager.getUserOneTimeCode(user).then(function (code) {
+    }
+    verify2faOneTimeCode(request, user) {
+        return this.userManager.getUserOneTimeCode(user).then((code) => {
             if (!code) {
                 return false;
             }
-            return _this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(function (pass) {
+            return this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
                 if (!pass) {
                     return false;
                 }
-                return _this.userManager.setOneTimeCodeToUnavailable(code)
-                    .then(function () {
+                return this.userManager.setOneTimeCodeToUnavailable(code)
+                    .then(() => {
                     request.session.oneTimeCodeUsed = true;
                     return true;
                 });
             });
         });
-    };
-    UserService.prototype.logout = function (request) {
+    }
+    logout(request) {
         if (!request.session.user)
             throw new vineyard_lawn_1.BadRequest('Already logged out.', { key: 'already-logged-out' });
         request.session.user = null;
         return Promise.resolve({});
-    };
-    UserService.prototype.createTempPassword = function (username) {
-        var _this = this;
-        return this.userManager.getUserModel().first({ username: username })
-            .then(function (user) {
-            if (!user)
-                throw new vineyard_lawn_1.BadRequest("Invalid username", {
-                    key: "invalid-username",
-                    data: { username: username }
-                });
-            return _this.userManager.getTempPassword(user)
-                .then(function (tempPassword) {
+    }
+    getUser(usernameOrUser) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (typeof usernameOrUser === 'string')
+                return this.userManager.getUserModel().first({ username: usernameOrUser });
+            else if (typeof usernameOrUser === 'object')
+                return Promise.resolve(usernameOrUser);
+            else
+                throw new Error("Invalid username or user.");
+        });
+    }
+    createTempPassword(usernameOrUser) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const userOrUndefined = yield this.getUser(usernameOrUser);
+            if (!userOrUndefined)
+                return Promise.resolve(new vineyard_lawn_1.BadRequest("Invalid user"));
+            const user = userOrUndefined;
+            return this.userManager.getTempPassword(user)
+                .then(tempPassword => {
                 if (!tempPassword) {
-                    var passwordString_1 = Math.random().toString(36).slice(2);
-                    return _this.userManager.hashPassword(passwordString_1)
-                        .then(function (hashedPassword) { return _this.userManager.getTempPasswordCollection().create({
+                    const passwordString = Math.random().toString(36).slice(2);
+                    return this.userManager.hashPassword(passwordString)
+                        .then(hashedPassword => this.userManager.getTempPasswordCollection().create({
                         user: user,
                         password: hashedPassword
-                    }); })
-                        .then(function () {
+                    }))
+                        .then(() => {
                         return {
-                            tempPassword: passwordString_1,
+                            tempPassword: passwordString,
                             user: user
                         };
                     });
@@ -197,55 +196,52 @@ var UserService = (function () {
                 }
             });
         });
-    };
-    UserService.prototype.require_logged_in = function (request) {
+    }
+    require_logged_in(request) {
         if (!request.session.user)
             throw new lawn.Needs_Login();
-    };
-    UserService.prototype.getSanitizedUser = function (id) {
+    }
+    getSanitizedUser(id) {
         return this.getModel()
             .getUser(id)
             .then(sanitize);
-    };
-    UserService.prototype.addUserToRequest = function (request) {
+    }
+    addUserToRequest(request) {
         if (request.user)
             return Promise.resolve(request.user);
         return this.userManager.getUser(request.session.user)
-            .then(function (user) {
+            .then(user => {
             if (user)
                 return request.user = sanitize(user);
             else
                 return undefined;
         });
-    };
-    UserService.prototype.loadValidationHelpers = function (ajv) {
+    }
+    loadValidationHelpers(ajv) {
         ajv.addSchema(require('./validation/helpers.json'));
-    };
-    UserService.prototype.fieldExists = function (request, fieldOptions) {
-        var keyName = request.data.key;
-        var value = request.data.value;
+    }
+    fieldExists(request, fieldOptions) {
+        const keyName = request.data.key;
+        const value = request.data.value;
         if (fieldOptions.indexOf(keyName) == -1)
             throw new vineyard_lawn_1.Bad_Request('Invalid user field', {
                 key: 'invalid-user-field',
                 data: { field: keyName }
             });
         return this.userManager.fieldExists(keyName, value)
-            .then(function (result) { return ({
+            .then(result => ({
             exists: result
-        }); });
-    };
-    UserService.prototype.getModel = function () {
-        return this.userManager;
-    };
-    return UserService;
-}());
-exports.UserService = UserService;
-var User_Service = (function (_super) {
-    __extends(User_Service, _super);
-    function User_Service(app, UserManager, settings) {
-        return _super.call(this, app, UserManager, settings) || this;
+        }));
     }
-    return User_Service;
-}(UserService));
+    getModel() {
+        return this.userManager;
+    }
+}
+exports.UserService = UserService;
+class User_Service extends UserService {
+    constructor(app, UserManager, settings) {
+        super(app, UserManager, settings);
+    }
+}
 exports.User_Service = User_Service;
 //# sourceMappingURL=user-service.js.map

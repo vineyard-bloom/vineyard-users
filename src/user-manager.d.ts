@@ -1,7 +1,7 @@
 /// <reference types="sequelize" />
 import * as Sequelize from 'sequelize';
 import { Collection } from "vineyard-ground";
-import { UserWithUsername, UserWithPassword } from "./User";
+import { UserWithPassword, BaseUser } from "./User";
 export interface Settings {
     user_model?: any;
     tableKeys?: any;
@@ -43,20 +43,20 @@ export declare class UserManager {
     getOneTimeCodeCollection(): Collection<Onetimecode>;
     private tempPasswordHasExpired(tempPassword);
     private emailCodeHasExpired(emailCode);
-    matchTempPassword(user: UserWithUsername, password: string): Promise<boolean>;
+    matchTempPassword(user: BaseUser, password: string): Promise<boolean>;
     getUserFromUsername(username: string): Promise<UserWithPassword>;
     getUserFromEmail(email: string): Promise<UserWithPassword>;
     private _createTempPassword(user);
-    createTempPassword(username: string | UserWithUsername): Promise<any>;
-    createEmailCode(user: UserWithUsername): Promise<any>;
+    createTempPassword(username: string | BaseUser): Promise<any>;
+    createEmailCode(user: BaseUser): Promise<any>;
     verifyEmailCode(userId: string, submittedCode: string): Promise<boolean>;
-    getEmailCode(user: UserWithUsername): Promise<EmailVerification | undefined>;
-    getTempPassword(user: UserWithUsername): Promise<TempPassword | undefined>;
-    getUserOneTimeCode(user: UserWithUsername): Promise<Onetimecode | undefined>;
+    getEmailCode(user: BaseUser): Promise<EmailVerification | undefined>;
+    getTempPassword(user: BaseUser): Promise<TempPassword | undefined>;
+    getUserOneTimeCode(user: BaseUser): Promise<Onetimecode | undefined>;
     fieldExists(key: string, value: any): Promise<boolean>;
     compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode): Promise<boolean>;
     setOneTimeCodeToUnavailable(oneTimeCode: Onetimecode): Promise<Onetimecode>;
-    checkUniqueness(user: UserWithUsername, field?: string): Promise<void>;
+    checkUniqueness(user: BaseUser, field?: string): Promise<void>;
     getTempPasswordCollection(): Collection<TempPassword>;
 }
 export declare class User_Manager extends UserManager {

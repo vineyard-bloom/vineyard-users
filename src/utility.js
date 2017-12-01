@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 function has_role(user, role) {
-    var role_id;
+    let role_id;
     if (typeof role == 'number') {
         role_id = role;
     }
@@ -11,8 +11,8 @@ function has_role(user, role) {
     else {
         throw Error("Invalid role type: " + (typeof role) + ".");
     }
-    var roles = user.roles;
-    for (var i = 0; i < roles.length; ++i) {
+    const roles = user.roles;
+    for (let i = 0; i < roles.length; ++i) {
         if (roles[i].id == role_id) {
             return true;
         }
@@ -21,7 +21,7 @@ function has_role(user, role) {
 }
 exports.has_role = has_role;
 function has_any_role(user, roles) {
-    for (var i = 0; i < roles.length; ++i) {
+    for (let i = 0; i < roles.length; ++i) {
         if (has_role(user, roles[i]))
             return true;
     }
@@ -31,13 +31,10 @@ exports.has_any_role = has_any_role;
 function promiseEach(items, action) {
     if (items.length == 0)
         return Promise.resolve();
-    var result = action(items[0]);
-    var _loop_1 = function (i) {
+    let result = action(items[0]);
+    for (let i = 1; i < items.length; ++i) {
         result = result
-            .then(function () { return action(items[i]); });
-    };
-    for (var i = 1; i < items.length; ++i) {
-        _loop_1(i);
+            .then(() => action(items[i]));
     }
     return result;
 }

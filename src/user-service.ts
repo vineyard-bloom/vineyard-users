@@ -19,7 +19,7 @@ export interface CookieSettings {
 
 export type Service_Settings = CookieSettings
 
-function sanitize(user: UserWithPassword): UserWithUsername {
+function sanitize(user: UserWithPassword): BaseUser {
   const result = Object.assign({}, user)
   delete result.password
   delete result.twoFactorSecret
@@ -104,7 +104,7 @@ export class UserService {
     return this.userManager.getUserModel().first(filter)
       .then(user => {
         if (!user)
-          throw new Bad_Request('Incorrect username or password.', {key: 'invalid-credentials'})
+          throw new Bad_Request('Invalid credentials.', {key: 'invalid-credentials'})
 
         return bcrypt.compare(password, user.password)
           .then((success: boolean) => success
@@ -114,11 +114,11 @@ export class UserService {
       })
   }
 
-  checkTempPassword(user: UserWithUsername, password: string) {
+  checkTempPassword(user: BaseUser, password: string) {
     return this.userManager.matchTempPassword(user, password)
       .then(success => {
         if (!success)
-          throw new Bad_Request('Incorrect username or password.', {key: 'invalid-credentials'})
+          throw new Bad_Request('Invalid credentials.', {key: 'invalid-credentials'})
 
         return user
       })
@@ -153,7 +153,7 @@ export class UserService {
       .then(user => this.finishLogin(request, user))
   }
 
-  checkTwoFactor(user: UserWithUsername, request: Request) {
+  checkTwoFactor(user: BaseUser, request: Request) {
     if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
       throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
   }
@@ -172,7 +172,7 @@ export class UserService {
       })
   }
 
-  verify2faOneTimeCode(request: Request, user: UserWithUsername): Promise<boolean> {
+  verify2faOneTimeCode(request: Request, user: BaseUser): Promise<boolean> {
     return this.userManager.getUserOneTimeCode(user).then((code: Onetimecode | undefined) => {
       if (!code) {
         return false
@@ -198,43 +198,46 @@ export class UserService {
     return Promise.resolve({})
   }
 
-  createTempPassword(username: string): Promise<any> {
-    return this.userManager.getUserModel().first({username: username})
-      .then(user => {
-        if (!user)
+  private async getUser(usernameOrUser: string | BaseUser): Promise<BaseUser | undefined> {
+    if (typeof usernameOrUser === 'string')
+      return this.userManager.getUserModel().first({username: usernameOrUser})
+    else if (typeof usernameOrUser === 'object')
+      return Promise.resolve(usernameOrUser)
+
+    else throw new Error("Invalid username or user.")
+  }
+
+  async createTempPassword(usernameOrUser: string | BaseUser): Promise<any> {
+    const userOrUndefined = await this.getUser(usernameOrUser)
+    if (!userOrUndefined)
+      return Promise.resolve(new BadRequest("Invalid user"))
+
+    const user = userOrUndefined as BaseUser
+    
+    return this.userManager.getTempPassword(user)
+      .then(tempPassword => {
+        if (!tempPassword) {
+          const passwordString = Math.random().toString(36).slice(2)
+          return this.userManager.hashPassword(passwordString)
+            .then(hashedPassword => this.userManager.getTempPasswordCollection().create({
+                user: user,
+                password: hashedPassword
+              })
+            )
+            .then(() => {
+              return {
+                tempPassword: passwordString,
+                user: user
+              }
+            })
+        } else {
           throw new BadRequest(
-            "Invalid username",
+            "A temporary password has already been created. Please try again at a later time.",
             {
-              key: "invalid-username",
-              data: {username: username}
+              key: 'existing-temp-pass'
             }
           )
-
-        return this.userManager.getTempPassword(user)
-          .then(tempPassword => {
-            if (!tempPassword) {
-              const passwordString = Math.random().toString(36).slice(2)
-              return this.userManager.hashPassword(passwordString)
-                .then(hashedPassword => this.userManager.getTempPasswordCollection().create({
-                    user: user,
-                    password: hashedPassword
-                  })
-                )
-                .then(() => {
-                  return {
-                    tempPassword: passwordString,
-                    user: user
-                  }
-                })
-            } else {
-              throw new BadRequest(
-                "A temporary password has already been created. Please try again at a later time.",
-                {
-                  key: 'existing-temp-pass'
-                }
-              )
-            }
-          })
+        }
       })
   }
 
@@ -243,13 +246,13 @@ export class UserService {
       throw new lawn.Needs_Login()
   }
 
-  getSanitizedUser(id: string): Promise<UserWithUsername> {
+  getSanitizedUser(id: string): Promise<BaseUser> {
     return this.getModel()
       .getUser(id)
       .then(sanitize)
   }
 
-  addUserToRequest(request: Request): Promise<UserWithUsername | undefined> {
+  addUserToRequest(request: Request): Promise<BaseUser | undefined> {
     if (request.user)
       return Promise.resolve(request.user)
 

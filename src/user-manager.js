@@ -1,24 +1,14 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var utility_1 = require("./utility");
-var errors_1 = require("vineyard-lawn/source/errors");
-var bcrypt = require('bcrypt');
-var UserManager = (function () {
-    function UserManager(db, settings) {
+const utility_1 = require("./utility");
+const errors_1 = require("vineyard-lawn/source/errors");
+const bcrypt = require('bcrypt');
+class UserManager {
+    constructor(db, settings) {
         this.db = db;
         if (!settings)
             throw new Error("Missing settings argument.");
-        var self = this;
+        const self = this;
         this.userModel = self.UserModel = self.User_Model = self.user_model =
             settings.user_model || settings.model.User;
         if (settings.model) {
@@ -77,7 +67,7 @@ var UserManager = (function () {
                     }
                 },
             });
-            var collections = settings.model.ground.collections;
+            const collections = settings.model.ground.collections;
             this.sessionCollection = collections.Session;
             this.tempPasswordCollection = collections.Session;
             this.emailVerificationCollection = collections.EmailVerification;
@@ -86,110 +76,106 @@ var UserManager = (function () {
         // Backwards compatibility
         self.create_user = this.createUser;
     }
-    UserManager.prototype.getUserModel = function () {
+    getUserModel() {
         return this.userModel;
-    };
-    UserManager.prototype.hashPassword = function (password) {
+    }
+    hashPassword(password) {
         return bcrypt.hash(password, 10);
-    };
-    UserManager.prototype.prepareNewUser = function (fields) {
+    }
+    prepareNewUser(fields) {
         if (!fields.roles && this.userModel.trellis.properties.roles)
             fields.roles = [];
         if (typeof fields.email === 'string')
             fields.email = fields.email.toLowerCase();
         return this.hashPassword(fields.password)
-            .then(function (salt_and_hash) {
+            .then(salt_and_hash => {
             fields.password = salt_and_hash;
             return fields;
         });
-    };
-    UserManager.prototype.prepare_new_user = function (fields) {
+    }
+    prepare_new_user(fields) {
         return this.prepareNewUser(fields);
-    };
-    UserManager.prototype.createUser = function (fields, uniqueField) {
-        var _this = this;
-        if (uniqueField === void 0) { uniqueField = 'username'; }
+    }
+    createUser(fields, uniqueField = 'username') {
         // this.sanitizeRequest(fields)
-        var uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField];
-        return utility_1.promiseEach(uniqueFields, function (field) { return _this.checkUniqueness(fields, field); })
-            .then(function () {
-            return _this.prepare_new_user(fields)
-                .then(function (user) { return _this.userModel.create(fields); });
+        const uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField];
+        return utility_1.promiseEach(uniqueFields, (field) => this.checkUniqueness(fields, field))
+            .then(() => {
+            return this.prepare_new_user(fields)
+                .then(user => this.userModel.create(fields));
         });
-    };
-    UserManager.prototype.getUser = function (id) {
+    }
+    getUser(id) {
         return this.userModel.get(id).exec();
-    };
-    UserManager.prototype.getSessionCollection = function () {
+    }
+    getSessionCollection() {
         return this.sessionCollection;
-    };
-    UserManager.prototype.getUserCollection = function () {
+    }
+    getUserCollection() {
         return this.userModel;
-    };
-    UserManager.prototype.getOneTimeCodeCollection = function () {
+    }
+    getOneTimeCodeCollection() {
         return this.oneTimeCodeCollection;
-    };
-    UserManager.prototype.tempPasswordHasExpired = function (tempPassword) {
-        var expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000));
+    }
+    tempPasswordHasExpired(tempPassword) {
+        const expirationDate = new Date(tempPassword.created.getTime() + (6 * 60 * 60 * 1000));
         return new Date() > expirationDate;
-    };
-    UserManager.prototype.emailCodeHasExpired = function (emailCode) {
-        var expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000));
+    }
+    emailCodeHasExpired(emailCode) {
+        const expirationDate = new Date(emailCode.created.getTime() + (6 * 60 * 60 * 1000));
         return new Date() > expirationDate;
-    };
-    UserManager.prototype.matchTempPassword = function (user, password) {
-        var _this = this;
+    }
+    matchTempPassword(user, password) {
         if (!this.tempPasswordCollection)
             return Promise.resolve(false);
         return this.tempPasswordCollection.first({ user: user.id })
-            .then(function (storedTempPass) {
+            .then((storedTempPass) => {
             if (!storedTempPass)
                 return false;
-            if (_this.tempPasswordHasExpired(storedTempPass))
-                return _this.tempPasswordCollection.remove(storedTempPass)
-                    .then(function () { return false; });
+            if (this.tempPasswordHasExpired(storedTempPass))
+                return this.tempPasswordCollection.remove(storedTempPass)
+                    .then(() => false);
             return bcrypt.compare(password, storedTempPass.password)
-                .then(function (success) {
+                .then((success) => {
                 if (!success)
                     return false;
-                return _this.getUserCollection().update(user, {
+                return this.getUserCollection().update(user, {
                     password: storedTempPass.password
                 })
-                    .then(function () { return _this.tempPasswordCollection.remove(storedTempPass); })
-                    .then(function () { return true; });
+                    .then(() => this.tempPasswordCollection.remove(storedTempPass))
+                    .then(() => true);
             });
         });
-    };
-    UserManager.prototype.getUserFromUsername = function (username) {
+    }
+    getUserFromUsername(username) {
         return this.userModel.first({ username: username })
-            .then(function (user) {
+            .then(user => {
             if (!user)
                 throw new errors_1.BadRequest("Invalid username: " + username);
             return user;
         });
-    };
-    UserManager.prototype.getUserFromEmail = function (email) {
+    }
+    getUserFromEmail(email) {
         return this.userModel.first({ email: email })
-            .then(function (user) {
+            .then(user => {
             if (!user)
                 throw new errors_1.BadRequest("Invalid email: " + email);
             return user;
         });
-    };
-    UserManager.prototype._createTempPassword = function (user) {
-        var _this = this;
+    }
+    _createTempPassword(user) {
         return this.getTempPassword(user)
-            .then(function (tempPassword) {
+            .then(tempPassword => {
             if (!tempPassword) {
-                var passwordString_1 = Math.random().toString(36).slice(2);
-                return _this.hashPassword(passwordString_1)
-                    .then(function (hashedPassword) { return _this.tempPasswordCollection.create({
+                const passwordString = Math.random().toString(36).slice(2);
+                return this.hashPassword(passwordString)
+                    .then(hashedPassword => this.tempPasswordCollection.create({
                     user: user,
                     password: hashedPassword
-                }); })
-                    .then(function () {
+                }))
+                    .then(() => {
                     return {
-                        password: passwordString_1,
+                        password: passwordString,
                         username: user.username
                     };
                 });
@@ -198,95 +184,88 @@ var UserManager = (function () {
                 return Promise.resolve(undefined);
             }
         });
-    };
-    UserManager.prototype.createTempPassword = function (username) {
-        var _this = this;
+    }
+    createTempPassword(username) {
         if (typeof username == 'string') {
             return this.getUserFromUsername(username)
-                .then(function (user) { return _this._createTempPassword(user); });
+                .then(user => this._createTempPassword(user));
         }
         else {
             return this._createTempPassword(username);
         }
-    };
-    UserManager.prototype.createEmailCode = function (user) {
-        var _this = this;
+    }
+    createEmailCode(user) {
         return this.getEmailCode(user)
-            .then(function (emailCode) {
+            .then(emailCode => {
             if (!emailCode) {
-                var newEmlCode_1 = Math.random().toString(36).slice(2);
-                return _this.emailVerificationCollection.create({
+                const newEmlCode = Math.random().toString(36).slice(2);
+                return this.emailVerificationCollection.create({
                     user: user,
-                    code: newEmlCode_1
+                    code: newEmlCode
                 })
-                    .then(function () { return newEmlCode_1; });
+                    .then(() => newEmlCode);
             }
             else {
                 return Promise.resolve(emailCode.code);
             }
         });
-    };
-    UserManager.prototype.verifyEmailCode = function (userId, submittedCode) {
-        var _this = this;
+    }
+    verifyEmailCode(userId, submittedCode) {
         return this.userModel.first({ id: userId }).exec()
-            .then(function (user) {
+            .then(user => {
             if (!user)
                 return false;
-            return _this.emailVerificationCollection.first({
+            return this.emailVerificationCollection.first({
                 user: userId
             })
-                .then(function (emailCode) {
+                .then(emailCode => {
                 if (!emailCode || emailCode.code != submittedCode)
                     return Promise.resolve(false);
-                return _this.userModel.update(user, {
+                return this.userModel.update(user, {
                     emailVerified: true
                 })
-                    .then(function () { return true; });
+                    .then(() => true);
             });
         });
-    };
-    UserManager.prototype.getEmailCode = function (user) {
+    }
+    getEmailCode(user) {
         return this.emailVerificationCollection.first({ user: user.id }).exec();
-    };
-    UserManager.prototype.getTempPassword = function (user) {
+    }
+    getTempPassword(user) {
         return this.tempPasswordCollection.first({ user: user.id }).exec();
-    };
-    UserManager.prototype.getUserOneTimeCode = function (user) {
+    }
+    getUserOneTimeCode(user) {
         return this.oneTimeCodeCollection.first({ user: user.id, available: true }).exec();
-    };
-    UserManager.prototype.fieldExists = function (key, value) {
-        var filter = {};
+    }
+    fieldExists(key, value) {
+        const filter = {};
         filter[key] = value;
         return this.userModel.first(filter).exec()
-            .then(function (user) { return !!user; });
-    };
-    UserManager.prototype.compareOneTimeCode = function (oneTimeCode, codeRecord) {
+            .then((user) => !!user);
+    }
+    compareOneTimeCode(oneTimeCode, codeRecord) {
         return Promise.resolve(oneTimeCode === codeRecord.code);
-    };
-    UserManager.prototype.setOneTimeCodeToUnavailable = function (oneTimeCode) {
+    }
+    setOneTimeCodeToUnavailable(oneTimeCode) {
         return this.oneTimeCodeCollection.update(oneTimeCode, { available: false });
-    };
-    UserManager.prototype.checkUniqueness = function (user, field) {
-        if (field === void 0) { field = 'username'; }
+    }
+    checkUniqueness(user, field = 'username') {
         return this.fieldExists(field, user[field])
-            .then(function (result) {
+            .then(result => {
             if (result) {
-                throw new Error("User validation error: " + field + " must be unique");
+                throw new Error(`User validation error: ${field} must be unique`);
             }
         });
-    };
-    UserManager.prototype.getTempPasswordCollection = function () {
-        return this.tempPasswordCollection;
-    };
-    return UserManager;
-}());
-exports.UserManager = UserManager;
-var User_Manager = (function (_super) {
-    __extends(User_Manager, _super);
-    function User_Manager(db, settings) {
-        return _super.call(this, db, settings) || this;
     }
-    return User_Manager;
-}(UserManager));
+    getTempPasswordCollection() {
+        return this.tempPasswordCollection;
+    }
+}
+exports.UserManager = UserManager;
+class User_Manager extends UserManager {
+    constructor(db, settings) {
+        super(db, settings);
+    }
+}
 exports.User_Manager = User_Manager;
 //# sourceMappingURL=user-manager.js.map
