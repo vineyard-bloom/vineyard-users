@@ -18,8 +18,22 @@ export declare class UserService {
     private user_manager;
     constructor(app: express.Application, userManager: UserManager, cookie: CookieSettings, sessionStore?: any);
     private _checkLogin(filter, password);
-    checkTempPassword(user: BaseUser, password: string): any;
+    checkTempPassword(user: BaseUser, password: string): Promise<BaseUser>;
+    /**
+     * Compares a plain text password with a salted password.
+     *
+     * @param password  Plain text password
+     *
+     * @param hash  Salted password
+     *
+     */
     checkPassword(password: string, hash: string): Promise<boolean>;
+    /**
+     * Checks login credentials using a password and a username or email
+     *
+     * @param request  Vineyard Lawn request
+     *
+     */
     checkUsernameOrEmailLogin(request: Request): Promise<UserWithPassword>;
     checkEmailLogin(request: Request): Promise<UserWithPassword>;
     finishLogin(request: Request, user: UserWithPassword): BaseUser;

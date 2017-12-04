@@ -31,10 +31,39 @@ export declare class UserManager {
     private oneTimeCodeCollection;
     constructor(db: Sequelize.Sequelize, settings: Settings);
     getUserModel(): Collection<UserWithPassword>;
+    /**
+     * Hashes a password using bcrypt.
+     *
+     * @param password  Plain text password
+     *
+     */
     hashPassword(password: string): Promise<string>;
-    prepareNewUser(fields: any): Promise<any>;
-    prepare_new_user(fields: any): Promise<any>;
-    createUser(fields: any, uniqueField?: string | string[]): Promise<any>;
+    /**
+     * Prepares a new user structure before being saved to the database.
+     * Hashes the password, ensures the email is lowercase, and ensures the user.roles is at least an empty array.
+     * This function is called by UserManager.createUser and rarely needs to be called directly.
+     *
+     * @param userFields  Initial user object
+     *
+     */
+    prepareNewUser(userFields: any): Promise<any>;
+    /**
+     * Saves a new user record to the database.
+     * Hashes the password, ensures the email is lowercase, and ensures the user.roles is at least an empty array.
+     *
+     * @param userFields  Initial user object
+     *
+     * @param uniqueFields  An array of user field names that must be unique.
+     *
+     */
+    createUser(userFields: any, uniqueFields?: string | string[]): Promise<any>;
+    /**
+     * Fetches a user from the database.
+     * This function does not sanitize its result so it can return records with login info.
+     *
+     * @param id  User identity string or object
+     *
+     */
     getUser(id: {
         id: string;
     } | string): Promise<UserWithPassword | undefined>;
@@ -44,7 +73,21 @@ export declare class UserManager {
     private tempPasswordHasExpired(tempPassword);
     private emailCodeHasExpired(emailCode);
     matchTempPassword(user: BaseUser, password: string): Promise<boolean>;
+    /**
+     * Finds a user that has a particular username.
+     * This function does not sanitize its result so it can return records with login info.
+     *
+     * @param username  The value to search for
+     *
+     */
     getUserFromUsername(username: string): Promise<UserWithPassword>;
+    /**
+     * Finds a user that has a particular email address.
+     * This function does not sanitize its result so it can return records with login info.
+     *
+     * @param email  The value to search for
+     *
+     */
     getUserFromEmail(email: string): Promise<UserWithPassword>;
     private _createTempPassword(user);
     createTempPassword(username: string | BaseUser): Promise<any>;

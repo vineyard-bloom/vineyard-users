@@ -95,9 +95,23 @@ class UserService {
             return user;
         });
     }
+    /**
+     * Compares a plain text password with a salted password.
+     *
+     * @param password  Plain text password
+     *
+     * @param hash  Salted password
+     *
+     */
     checkPassword(password, hash) {
         return bcrypt.compare(password, hash);
     }
+    /**
+     * Checks login credentials using a password and a username or email
+     *
+     * @param request  Vineyard Lawn request
+     *
+     */
     checkUsernameOrEmailLogin(request) {
         const data = request.data;
         const filter = data.username

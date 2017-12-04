@@ -26,6 +26,7 @@
     "@types/node": "^7.0.5",
     "mocha": "^3.2.0",
     "request": "^2.81.0",
-    "source-map-support": "^0.4.14"
+    "source-map-support": "^0.4.14",
+    "vineyard-docs": "vineyard-bloom/vineyard-docs#1.0.0-beta"
   }
 }

@@ -124,10 +124,24 @@ export class UserService {
       })
   }
 
+  /**
+   * Compares a plain text password with a salted password.
+   *
+   * @param password  Plain text password
+   *
+   * @param hash  Salted password
+   *
+   */
   checkPassword(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash)
   }
 
+  /**
+   * Checks login credentials using a password and a username or email
+   *
+   * @param request  Vineyard Lawn request
+   *
+   */
   checkUsernameOrEmailLogin(request: Request): Promise<UserWithPassword> {
     const data = request.data
 

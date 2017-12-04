@@ -75,36 +75,63 @@ class UserManager {
         }
         // Backwards compatibility
         self.create_user = this.createUser;
+        self.prepare_new_user = this.prepareNewUser;
     }
     getUserModel() {
         return this.userModel;
     }
+    /**
+     * Hashes a password using bcrypt.
+     *
+     * @param password  Plain text password
+     *
+     */
     hashPassword(password) {
         return bcrypt.hash(password, 10);
     }
-    prepareNewUser(fields) {
-        if (!fields.roles && this.userModel.trellis.properties.roles)
-            fields.roles = [];
-        if (typeof fields.email === 'string')
-            fields.email = fields.email.toLowerCase();
-        return this.hashPassword(fields.password)
+    /**
+     * Prepares a new user structure before being saved to the database.
+     * Hashes the password, ensures the email is lowercase, and ensures the user.roles is at least an empty array.
+     * This function is called by UserManager.createUser and rarely needs to be called directly.
+     *
+     * @param userFields  Initial user object
+     *
+     */
+    prepareNewUser(userFields) {
+        if (!userFields.roles && this.userModel.trellis.properties.roles)
+            userFields.roles = [];
+        if (typeof userFields.email === 'string')
+            userFields.email = userFields.email.toLowerCase();
+        return this.hashPassword(userFields.password)
             .then(salt_and_hash => {
-            fields.password = salt_and_hash;
-            return fields;
+            userFields.password = salt_and_hash;
+            return userFields;
         });
     }
-    prepare_new_user(fields) {
-        return this.prepareNewUser(fields);
-    }
-    createUser(fields, uniqueField = 'username') {
-        // this.sanitizeRequest(fields)
-        const uniqueFields = Array.isArray(uniqueField) ? uniqueField : [uniqueField];
-        return utility_1.promiseEach(uniqueFields, (field) => this.checkUniqueness(fields, field))
+    /**
+     * Saves a new user record to the database.
+     * Hashes the password, ensures the email is lowercase, and ensures the user.roles is at least an empty array.
+     *
+     * @param userFields  Initial user object
+     *
+     * @param uniqueFields  An array of user field names that must be unique.
+     *
+     */
+    createUser(userFields, uniqueFields = 'username') {
+        const _uniqueFields = Array.isArray(uniqueFields) ? uniqueFields : [uniqueFields];
+        return utility_1.promiseEach(_uniqueFields, (field) => this.checkUniqueness(userFields, field))
             .then(() => {
-            return this.prepare_new_user(fields)
-                .then(user => this.userModel.create(fields));
+            return this.prepareNewUser(userFields)
+                .then(user => this.userModel.create(userFields));
         });
     }
+    /**
+     * Fetches a user from the database.
+     * This function does not sanitize its result so it can return records with login info.
+     *
+     * @param id  User identity string or object
+     *
+     */
     getUser(id) {
         return this.userModel.get(id).exec();
     }
@@ -147,6 +174,13 @@ class UserManager {
             });
         });
     }
+    /**
+     * Finds a user that has a particular username.
+     * This function does not sanitize its result so it can return records with login info.
+     *
+     * @param username  The value to search for
+     *
+     */
     getUserFromUsername(username) {
         return this.userModel.first({ username: username })
             .then(user => {
@@ -155,6 +189,13 @@ class UserManager {
             return user;
         });
     }
+    /**
+     * Finds a user that has a particular email address.
+     * This function does not sanitize its result so it can return records with login info.
+     *
+     * @param email  The value to search for
+     *
+     */
     getUserFromEmail(email) {
         return this.userModel.first({ email: email })
             .then(user => {
