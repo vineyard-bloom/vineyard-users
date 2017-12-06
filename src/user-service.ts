@@ -5,7 +5,7 @@ import {Bad_Request, Request, BadRequest} from 'vineyard-lawn'
 import * as lawn from 'vineyard-lawn'
 import * as express from 'express'
 import * as two_factor from './two-factor'
-import {UserWithUsername, UserWithPassword, BaseUser} from "./User";
+import {UserWithUsername, UserWithPassword, BaseUser} from "./types";
 import {SequelizeStore} from "./session-store";
 
 const bcrypt = require('bcrypt')

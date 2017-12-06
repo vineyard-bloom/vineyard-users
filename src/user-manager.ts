@@ -1,7 +1,7 @@
 import * as Sequelize from 'sequelize'
 import {promiseEach} from "./utility";
 import {Collection, QueryBuilder} from "vineyard-ground"
-import {UserWithUsername, UserWithPassword, BaseUser} from "./User"
+import {UserWithUsername, UserWithPassword, BaseUser} from "./types"
 import {BadRequest} from "vineyard-lawn/source/errors";
 
 const bcrypt = require('bcrypt');
@@ -376,8 +376,4 @@ export class UserManager {
   }
 }
 
-export class User_Manager extends UserManager {
-  constructor(db: Sequelize.Sequelize, settings: Settings) {
-    super(db, settings)
-  }
-}
+module.exports.User_Manager = UserManager

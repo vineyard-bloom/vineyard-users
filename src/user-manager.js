@@ -303,10 +303,5 @@ class UserManager {
     }
 }
 exports.UserManager = UserManager;
-class User_Manager extends UserManager {
-    constructor(db, settings) {
-        super(db, settings);
-    }
-}
-exports.User_Manager = User_Manager;
+module.exports.User_Manager = UserManager;
 //# sourceMappingURL=user-manager.js.map

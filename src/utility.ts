@@ -1,4 +1,4 @@
-import {Role, UserWithUsername} from "./User";
+import {Role, UserWithUsername} from "./types";
 
 export type Role_Id_Parameter = Role | number
 

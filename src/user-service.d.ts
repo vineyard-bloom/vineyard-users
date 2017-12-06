@@ -3,7 +3,7 @@ import { UserManager } from "./user-manager";
 import { Request } from 'vineyard-lawn';
 import * as lawn from 'vineyard-lawn';
 import * as express from 'express';
-import { UserWithPassword, BaseUser } from "./User";
+import { UserWithPassword, BaseUser } from "./types";
 import { SequelizeStore } from "./session-store";
 export interface CookieSettings {
     secret: string;

@@ -1,4 +1,4 @@
-import {Request, Bad_Request, Request_Processor, Version, VersionPreprocessor} from 'vineyard-lawn'
+import {Request, Bad_Request, RequestProcessor, Version, VersionPreprocessor} from 'vineyard-lawn'
 import {UserService} from "./user-service";
 
 export class LoggedInPreprocessor extends VersionPreprocessor {
@@ -7,11 +7,11 @@ export class LoggedInPreprocessor extends VersionPreprocessor {
     super(versions)
   }
 
-  createAnonymous(): Request_Processor {
+  createAnonymous(): RequestProcessor {
     return request => this.common(request)
   }
 
-  createAuthorized(userService: UserService): Request_Processor {
+  createAuthorized(userService: UserService): RequestProcessor {
     return request => this.common(request)
       .then(request => {
         userService.require_logged_in(request)

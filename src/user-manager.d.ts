@@ -1,7 +1,7 @@
 /// <reference types="sequelize" />
 import * as Sequelize from 'sequelize';
 import { Collection } from "vineyard-ground";
-import { UserWithPassword, BaseUser } from "./User";
+import { UserWithPassword, BaseUser } from "./types";
 export interface Settings {
     user_model?: any;
     tableKeys?: any;
@@ -101,7 +101,4 @@ export declare class UserManager {
     setOneTimeCodeToUnavailable(oneTimeCode: Onetimecode): Promise<Onetimecode>;
     checkUniqueness(user: BaseUser, field?: string): Promise<void>;
     getTempPasswordCollection(): Collection<TempPassword>;
-}
-export declare class User_Manager extends UserManager {
-    constructor(db: Sequelize.Sequelize, settings: Settings);
 }
