@@ -6,10 +6,10 @@ class LoggedInPreprocessor extends vineyard_lawn_1.VersionPreprocessor {
         super(versions);
     }
     createAnonymous() {
-        return request => this.common(request);
+        return (request) => this.common(request);
     }
     createAuthorized(userService) {
-        return request => this.common(request)
+        return (request) => this.common(request)
             .then(request => {
             userService.require_logged_in(request);
             return request;

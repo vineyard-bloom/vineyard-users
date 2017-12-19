@@ -7,8 +7,10 @@ export interface BaseUser {
     email: string;
     twoFactorSecret: string;
     twoFactorEnabled: boolean;
-    roles: Role[];
     [key: string]: any;
+}
+export interface UserWithRoles extends BaseUser {
+    roles: Role[];
 }
 export interface UserWithUsername extends BaseUser {
     username: string;
