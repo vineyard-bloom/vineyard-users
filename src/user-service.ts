@@ -221,13 +221,7 @@ export class UserService {
     else throw new Error("Invalid username or user.")
   }
 
-  async createTempPassword(usernameOrUser: string | BaseUser): Promise<any> {
-    const userOrUndefined = await this.getUser(usernameOrUser)
-    if (!userOrUndefined)
-      return Promise.resolve(new BadRequest("Invalid user"))
-
-    const user = userOrUndefined as BaseUser
-    
+  async createTempPassword(user: string): Promise<any> {
     return this.userManager.getTempPassword(user)
       .then(tempPassword => {
         if (!tempPassword) {

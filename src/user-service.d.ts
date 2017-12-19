@@ -43,7 +43,7 @@ export declare class UserService {
     verify2faOneTimeCode(request: Request, user: BaseUser): Promise<boolean>;
     logout(request: Request): Promise<{}>;
     private getUser(usernameOrUser);
-    createTempPassword(usernameOrUser: string | BaseUser): Promise<any>;
+    createTempPassword(user: string): Promise<any>;
     require_logged_in(request: lawn.Request): void;
     getSanitizedUser(id: string): Promise<BaseUser>;
     addUserToRequest(request: Request): Promise<BaseUser | undefined>;

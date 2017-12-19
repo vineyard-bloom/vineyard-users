@@ -181,12 +181,8 @@ class UserService {
                 throw new Error("Invalid username or user.");
         });
     }
-    createTempPassword(usernameOrUser) {
+    createTempPassword(user) {
         return __awaiter(this, void 0, void 0, function* () {
-            const userOrUndefined = yield this.getUser(usernameOrUser);
-            if (!userOrUndefined)
-                return Promise.resolve(new vineyard_lawn_1.BadRequest("Invalid user"));
-            const user = userOrUndefined;
             return this.userManager.getTempPassword(user)
                 .then(tempPassword => {
                 if (!tempPassword) {

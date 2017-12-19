@@ -69,7 +69,7 @@ class UserManager {
             });
             const collections = settings.model.ground.collections;
             this.sessionCollection = collections.Session;
-            this.tempPasswordCollection = collections.Session;
+            this.tempPasswordCollection = collections.TempPassword;
             this.emailVerificationCollection = collections.EmailVerification;
             this.oneTimeCodeCollection = collections.Onetimecode;
         }
@@ -204,7 +204,7 @@ class UserManager {
             return user;
         });
     }
-    _createTempPassword(user) {
+    createTempPassword(user) {
         return this.getTempPassword(user)
             .then(tempPassword => {
             if (!tempPassword) {
@@ -216,8 +216,7 @@ class UserManager {
                 }))
                     .then(() => {
                     return {
-                        password: passwordString,
-                        username: user.username
+                        password: passwordString
                     };
                 });
             }
@@ -225,15 +224,6 @@ class UserManager {
                 return Promise.resolve(undefined);
             }
         });
-    }
-    createTempPassword(username) {
-        if (typeof username == 'string') {
-            return this.getUserFromUsername(username)
-                .then(user => this._createTempPassword(user));
-        }
-        else {
-            return this._createTempPassword(username);
-        }
     }
     createEmailCode(user) {
         return this.getEmailCode(user)
@@ -273,7 +263,7 @@ class UserManager {
         return this.emailVerificationCollection.first({ user: user.id }).exec();
     }
     getTempPassword(user) {
-        return this.tempPasswordCollection.first({ user: user.id }).exec();
+        return this.tempPasswordCollection.first({ user: user }).exec();
     }
     getUserOneTimeCode(user) {
         return this.oneTimeCodeCollection.first({ user: user.id, available: true }).exec();
