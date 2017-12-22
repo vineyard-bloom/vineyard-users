@@ -59,16 +59,16 @@ class UserService {
         self.create_login_handler = () => {
             return (request) => this.loginWithUsername(request);
         };
-        self.create_login_2fa_handler = () => {
-            return (request) => this.checkUsernameOrEmailLogin(request)
-                .then(user => {
-                this.checkTwoFactor(user, request);
-                return this.finishLogin(request, user);
-            });
-        };
-        self.createLogin2faHandlerWithBackup = () => {
-            return (request) => this.login2faWithBackup(request);
-        };
+        // self.create_login_2fa_handler = () => {
+        //   return (request: Request) => this.checkUsernameOrEmailLogin(request)
+        //     .then(user => {
+        //       this.checkTwoFactor(user, request)
+        //       return this.finishLogin(request, user)
+        //     })
+        // }
+        // self.createLogin2faHandlerWithBackup = () => {
+        //   return (request: Request) => this.login2faWithBackup(request)
+        // }
         self.createLogoutHandler = () => {
             return (request) => this.logout(request);
         };
@@ -131,16 +131,16 @@ class UserService {
         return this.checkUsernameOrEmailLogin(request)
             .then(user => this.finishLogin(request, user));
     }
-    checkTwoFactor(user, request) {
-        if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
+    checkTwoFactor(user, twoFactorCode) {
+        if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), twoFactorCode))
             throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
     }
-    login2faWithBackup(request) {
+    login2faWithBackup(twoFactorCode, request) {
         return this.checkUsernameOrEmailLogin(request)
             .then(user => {
             const currentUser = user;
-            if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
-                return this.verify2faOneTimeCode(request, currentUser).then(backupCodeCheck => {
+            if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), twoFactorCode))
+                return this.verify2faOneTimeCode(twoFactorCode, request, currentUser).then(backupCodeCheck => {
                     if (!backupCodeCheck)
                         throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
                     return this.finishLogin(request, currentUser);
@@ -148,12 +148,12 @@ class UserService {
             return this.finishLogin(request, currentUser);
         });
     }
-    verify2faOneTimeCode(request, user) {
+    verify2faOneTimeCode(twoFactorCode, request, user) {
         return this.userManager.getUserOneTimeCode(user).then((code) => {
             if (!code) {
                 return false;
             }
-            return this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
+            return this.userManager.compareOneTimeCode(twoFactorCode, code).then(pass => {
                 if (!pass) {
                     return false;
                 }
