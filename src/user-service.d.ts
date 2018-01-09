@@ -40,6 +40,26 @@ export declare class UserService {
     loginWithUsername(request: Request): Promise<BaseUser>;
     checkTwoFactor(user: BaseUser, twoFactorCode: string): void;
     login2faWithBackup(twoFactorCode: string, request: Request): Promise<BaseUser>;
+    /**
+     * Searches for a matching, available one time code and consumes it if one is found for the provided user
+     *
+     * @param twoFactorCode  The one time code to check
+     *
+     * @param user  The user attempting to use the one time code
+     *
+     */
+    consume2faOneTimeCode(twoFactorCode: string, user: BaseUser): Promise<boolean>;
+    /**
+     * Wrapper for consume2faOneTimeCode that also sets session.oneTimeCodeUsed to true when
+     * a one time code is consumed.
+     *
+     * @param twoFactorCode  The one time code to check
+     *
+     * @param request  Used to grabe the session which is mutated if the one time code is consumed
+     *
+     * @param user  The user attempting to use the one time code
+     *
+     */
     verify2faOneTimeCode(twoFactorCode: string, request: Request, user: BaseUser): Promise<boolean>;
     logout(request: Request): Promise<{}>;
     private getUser(usernameOrUser);

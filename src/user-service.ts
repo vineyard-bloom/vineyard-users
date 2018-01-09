@@ -186,7 +186,15 @@ export class UserService {
       })
   }
 
-  verify2faOneTimeCode(twoFactorCode: string, request: Request, user: BaseUser): Promise<boolean> {
+  /**
+   * Searches for a matching, available one time code and consumes it if one is found for the provided user
+   *
+   * @param twoFactorCode  The one time code to check
+   *
+   * @param user  The user attempting to use the one time code
+   *
+   */
+  consume2faOneTimeCode(twoFactorCode: string, user: BaseUser): Promise<boolean> {
     return this.userManager.getUserOneTimeCode(user).then((code: Onetimecode | undefined) => {
       if (!code) {
         return false
@@ -197,11 +205,31 @@ export class UserService {
         }
         return this.userManager.setOneTimeCodeToUnavailable(<Onetimecode> code)
           .then(() => {
-            request.session.oneTimeCodeUsed = true
             return true
           })
       })
     })
+  }
+  
+  /**
+   * Wrapper for consume2faOneTimeCode that also sets session.oneTimeCodeUsed to true when
+   * a one time code is consumed.
+   *
+   * @param twoFactorCode  The one time code to check
+   *
+   * @param request  Used to grabe the session which is mutated if the one time code is consumed
+   *
+   * @param user  The user attempting to use the one time code
+   *
+   */
+  verify2faOneTimeCode(twoFactorCode: string, request: Request, user: BaseUser): Promise<boolean> {
+    return this.consume2faOneTimeCode(twoFactorCode, user)
+      .then(result => {
+        if (result)
+          request.session.oneTimeCodeUsed = true
+
+        return result
+      })
   }
 
   logout(request: Request) {
