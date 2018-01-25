@@ -65,7 +65,7 @@ export declare class UserService {
     private getUser(usernameOrUser);
     createTempPassword(user: string): Promise<any>;
     require_logged_in(request: lawn.Request): void;
-    getSanitizedUser(id: string): Promise<BaseUser>;
+    getSanitizedUser(id: string): Promise<BaseUser | undefined>;
     addUserToRequest(request: Request): Promise<BaseUser | undefined>;
     loadValidationHelpers(ajv: any): void;
     fieldExists(request: Request, fieldOptions: string[]): Promise<{

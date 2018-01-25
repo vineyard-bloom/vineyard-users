@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test": "mocha test/**"
+    "test": "mocha test/**/*.js"
   },
   "repository": "git@github.com:vineyard-bloom/vineyard-users.git",
   "author": "Christopher W. Johnson",
@@ -15,7 +15,7 @@
     "@types/sequelize": "^4.0.49",
     "bcrypt": "^1.0.2",
     "express": "^4.15.2",
-    "express-session": "^1.15.1",
+    "express-session": "^1.15.6",
     "speakeasy": "^2.0.0",
     "vineyard-ground": "vineyard-bloom/vineyard-ground#1.0.0-beta",
     "vineyard-lawn": "vineyard-bloom/vineyard-lawn#1.0.0-beta"
