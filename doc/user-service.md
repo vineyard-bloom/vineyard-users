@@ -1,6 +1,6 @@
 # Vineyard Users - UserService
 
-### Constructor
+#### Constructor
 
 Parameters
 
@@ -11,18 +11,9 @@ Parameters
 
 Returns `UserService`
 
-### Functions
+#### Functions
 
-#### `addUserToRequest`
-
-
-Parameters
-
-*  request `Request` 
-
-Returns `Promise`
-
-#### `checkEmailLogin`
+##### `addUserToRequest`
 
 
 Parameters
@@ -31,17 +22,29 @@ Parameters
 
 Returns `Promise`
 
-#### `checkPassword`
+##### `checkEmailLogin`
 
 
 Parameters
 
-*  password `string` 
-*  hash `string` 
+*  request `Request` 
 
 Returns `Promise`
 
-#### `checkTempPassword`
+##### `checkPassword`
+Compares a plain text password with a salted password.
+
+Parameters
+
+*  password `string` Plain text password
+
+*  hash `string` Salted password
+
+
+
+Returns `Promise`
+
+##### `checkTempPassword`
 
 
 Parameters
@@ -51,35 +54,50 @@ Parameters
 
 Returns `Promise`
 
-#### `checkTwoFactor`
+##### `checkTwoFactor`
 
 
 Parameters
 
 *  user `BaseUser` 
-*  request `Request` 
+*  twoFactorCode `string` 
 
 Returns `void`
 
-#### `checkUsernameOrEmailLogin`
+##### `checkUsernameOrEmailLogin`
+Checks login credentials using a password and a username or email
+
+Parameters
+
+*  request `Request` Vineyard Lawn request
+
+
+
+Returns `Promise`
+
+##### `consume2faOneTimeCode`
+Searches for a matching, available one time code and consumes it if one is found for the provided user
+
+Parameters
+
+*  twoFactorCode `string` The one time code to check
+
+*  user `BaseUser` The user attempting to use the one time code
+
+
+
+Returns `Promise`
+
+##### `createTempPassword`
 
 
 Parameters
 
-*  request `Request` 
+*  user `string` 
 
 Returns `Promise`
 
-#### `createTempPassword`
-
-
-Parameters
-
-*  usernameOrUser `` 
-
-Returns `Promise`
-
-#### `fieldExists`
+##### `fieldExists`
 
 
 Parameters
@@ -89,7 +107,7 @@ Parameters
 
 Returns `Promise`
 
-#### `finishLogin`
+##### `finishLogin`
 
 
 Parameters
@@ -99,12 +117,12 @@ Parameters
 
 Returns `BaseUser`
 
-#### `getModel`
+##### `getModel`
 
 
 Returns `UserManager`
 
-#### `getSanitizedUser`
+##### `getSanitizedUser`
 
 
 Parameters
@@ -113,7 +131,7 @@ Parameters
 
 Returns `Promise`
 
-#### `loadValidationHelpers`
+##### `loadValidationHelpers`
 
 
 Parameters
@@ -122,7 +140,17 @@ Parameters
 
 Returns `void`
 
-#### `login2faWithBackup`
+##### `login2faWithBackup`
+
+
+Parameters
+
+*  twoFactorCode `string` 
+*  request `Request` 
+
+Returns `Promise`
+
+##### `loginWithUsername`
 
 
 Parameters
@@ -131,7 +159,7 @@ Parameters
 
 Returns `Promise`
 
-#### `loginWithUsername`
+##### `logout`
 
 
 Parameters
@@ -140,16 +168,7 @@ Parameters
 
 Returns `Promise`
 
-#### `logout`
-
-
-Parameters
-
-*  request `Request` 
-
-Returns `Promise`
-
-#### `require_logged_in`
+##### `require_logged_in`
 
 
 Parameters
@@ -158,13 +177,19 @@ Parameters
 
 Returns `void`
 
-#### `verify2faOneTimeCode`
-
+##### `verify2faOneTimeCode`
+Wrapper for consume2faOneTimeCode that also sets session.oneTimeCodeUsed to true when
+a one time code is consumed.
 
 Parameters
 
-*  request `Request` 
-*  user `BaseUser` 
+*  twoFactorCode `string` The one time code to check
+
+*  request `Request` Used to grabe the session which is mutated if the one time code is consumed
+
+*  user `BaseUser` The user attempting to use the one time code
+
+
 
 Returns `Promise`
 

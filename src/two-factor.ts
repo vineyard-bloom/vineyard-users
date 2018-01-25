@@ -1,11 +1,11 @@
-import {Response_Generator, Bad_Request, create_endpoints, Method, Request} from "vineyard-lawn";
+import {ResponseGenerator, Bad_Request, createEndpoints, Method, Request} from "vineyard-lawn";
 import {ValidationCompiler} from "vineyard-lawn";
 
 const speakeasy = require("speakeasy")
 
 const window = 2
 
-export function createTwoFactorSecretResponse(): Response_Generator {
+export function createTwoFactorSecretResponse(): ResponseGenerator {
   return request => {
     const secret = speakeasy.generateSecret()
     return Promise.resolve({
@@ -40,7 +40,7 @@ export function verifyTwoFactorRequest(request: Request): string {
 }
 module.exports.verify_2fa_request = verifyTwoFactorRequest
 
-export function verifyTwoFactorTokenHandler(): Response_Generator {
+export function verifyTwoFactorTokenHandler(): ResponseGenerator {
   return request => {
     verifyTwoFactorRequest(request)
     return Promise.resolve({

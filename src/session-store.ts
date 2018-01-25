@@ -76,7 +76,7 @@ export class SequelizeStore extends Store {
     }).asCallback(callback)
   }
 
-  destroySession(sid: string, callback: SimpleCallback) {
+  destroy = (sid: string, callback: SimpleCallback) => {
     debug('Deleting %s', sid)
     this.sessionModel.find({where: {sid: sid}})
       .then((session: SequelizeSessionRecord) => {
