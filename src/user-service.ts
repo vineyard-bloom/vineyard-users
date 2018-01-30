@@ -66,7 +66,7 @@ export class UserService {
       store: sessionStore,
       cookie: cookie,
       resave: false,
-      saveUninitialized: true
+      saveUninitialized: false
     }))
 
     // Backwards compatibility
@@ -237,7 +237,15 @@ export class UserService {
       throw new BadRequest('Already logged out.', {key: 'already-logged-out'})
 
     request.session.user = null
-    return Promise.resolve({})
+    return new Promise((resolve, reject) => {
+      request.session.destroy((err: any) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve({})
+        }
+      })
+    })
   }
 
   private async getUser(usernameOrUser: string | BaseUser): Promise<BaseUser | undefined> {
@@ -282,10 +290,10 @@ export class UserService {
       throw new lawn.Needs_Login()
   }
 
-  getSanitizedUser(id: string): Promise<BaseUser> {
+  getSanitizedUser(id: string): Promise<BaseUser | undefined> {
     return this.getModel()
       .getUser(id)
-      .then(sanitize)
+      .then(mUser => mUser && sanitize(mUser))
   }
 
   addUserToRequest(request: Request): Promise<BaseUser | undefined> {
