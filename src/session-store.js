@@ -12,6 +12,17 @@ class SequelizeStore extends express_session_1.Store {
                 truncate: true
             }).asCallback(callback);
         };
+        this.destroy = (sid, callback) => {
+            debug('Deleting %s', sid);
+            this.sessionModel.find({ where: { sid: sid } })
+                .then((session) => {
+                if (!session) {
+                    debug('Could not find session %s', sid);
+                    return null;
+                }
+                return session.destroy();
+            }).asCallback(callback);
+        };
         this.get = (sid, callback) => {
             debug('GET "%s"', sid);
             this.sessionModel.find({ where: { sid: sid } })
@@ -88,17 +99,6 @@ class SequelizeStore extends express_session_1.Store {
         return cookie && cookie.expires
             ? cookie.expires
             : new Date(Date.now() + this.config.expiration);
-    }
-    destroySession(sid, callback) {
-        debug('Deleting %s', sid);
-        this.sessionModel.find({ where: { sid: sid } })
-            .then((session) => {
-            if (!session) {
-                debug('Could not find session %s', sid);
-                return null;
-            }
-            return session.destroy();
-        }).asCallback(callback);
     }
     formatCookie(expires) {
         return {

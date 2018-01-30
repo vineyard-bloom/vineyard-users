@@ -49,7 +49,7 @@ class UserService {
             store: sessionStore,
             cookie: cookie,
             resave: false,
-            saveUninitialized: true
+            saveUninitialized: false
         }));
         // Backwards compatibility
         const self = this;
@@ -195,7 +195,16 @@ class UserService {
         if (!request.session.user)
             throw new vineyard_lawn_1.BadRequest('Already logged out.', { key: 'already-logged-out' });
         request.session.user = null;
-        return Promise.resolve({});
+        return new Promise((resolve, reject) => {
+            request.session.destroy((err) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve({});
+                }
+            });
+        });
     }
     getUser(usernameOrUser) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -240,7 +249,7 @@ class UserService {
     getSanitizedUser(id) {
         return this.getModel()
             .getUser(id)
-            .then(sanitize);
+            .then(mUser => mUser && sanitize(mUser));
     }
     addUserToRequest(request) {
         if (request.user)

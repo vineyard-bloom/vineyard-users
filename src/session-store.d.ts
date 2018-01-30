@@ -29,7 +29,7 @@ export declare class SequelizeStore extends Store {
     stopSessionCron(): void;
     private determineExpiration(cookie);
     clear: (callback: (err: any) => void) => void;
-    destroySession(sid: string, callback: SimpleCallback): void;
+    destroy: (sid: string, callback: SimpleCallback) => void;
     formatCookie(expires: Date): {
         maxAge: number;
         secure: boolean;
