@@ -11,13 +11,13 @@ export declare class TwoFactorEndpoints {
     getNewSecret(): {
         method: Method;
         path: string;
-        action: Response_Generator;
+        action: any;
         validator: any;
     };
     verifyToken(): {
         method: Method;
         path: string;
-        action: Response_Generator;
+        action: any;
         validator: any;
     };
     getValidators(): any;
