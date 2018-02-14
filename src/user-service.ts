@@ -66,7 +66,7 @@ export class UserService {
       store: sessionStore,
       cookie: cookie,
       resave: false,
-      saveUninitialized: true
+      saveUninitialized: false
     }))
 
     // Backwards compatibility
@@ -79,17 +79,17 @@ export class UserService {
       return (request: Request) => this.loginWithUsername(request)
     }
 
-    self.create_login_2fa_handler = () => {
-      return (request: Request) => this.checkUsernameOrEmailLogin(request)
-        .then(user => {
-          this.checkTwoFactor(user, request)
-          return this.finishLogin(request, user)
-        })
-    }
+    // self.create_login_2fa_handler = () => {
+    //   return (request: Request) => this.checkUsernameOrEmailLogin(request)
+    //     .then(user => {
+    //       this.checkTwoFactor(user, request)
+    //       return this.finishLogin(request, user)
+    //     })
+    // }
 
-    self.createLogin2faHandlerWithBackup = () => {
-      return (request: Request) => this.login2faWithBackup(request)
-    }
+    // self.createLogin2faHandlerWithBackup = () => {
+    //   return (request: Request) => this.login2faWithBackup(request)
+    // }
 
     self.createLogoutHandler = () => {
       return (request: Request) => this.logout(request)
@@ -167,8 +167,8 @@ export class UserService {
       .then(user => this.finishLogin(request, user))
   }
 
-  checkTwoFactor(user: BaseUser, request: Request) {
-    if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
+  checkTwoFactor(user: BaseUser, twoFactorCode: string) {
+    if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), twoFactorCode))
       throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
   }
 
@@ -182,12 +182,12 @@ export class UserService {
       })
   }
 
-  login2faWithBackup(request: Request) {
+  login2faWithBackup(twoFactorCode: string, request: Request) {
     return this.checkUsernameOrEmailLogin(request)
       .then(user => {
         const currentUser = user
-        if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
-          return this.verify2faOneTimeCode(request, currentUser).then(backupCodeCheck => {
+        if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), twoFactorCode))
+          return this.verify2faOneTimeCode(twoFactorCode, request, currentUser).then(backupCodeCheck => {
             if (!backupCodeCheck)
               throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
             return this.finishLogin(request, currentUser)
@@ -196,22 +196,50 @@ export class UserService {
       })
   }
 
-  verify2faOneTimeCode(request: Request, user: BaseUser): Promise<boolean> {
+  /**
+   * Searches for a matching, available one time code and consumes it if one is found for the provided user
+   *
+   * @param twoFactorCode  The one time code to check
+   *
+   * @param user  The user attempting to use the one time code
+   *
+   */
+  consume2faOneTimeCode(twoFactorCode: string, user: BaseUser): Promise<boolean> {
     return this.userManager.getUserOneTimeCode(user).then((code: Onetimecode | undefined) => {
       if (!code) {
         return false
       }
-      return this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
+      return this.userManager.compareOneTimeCode(twoFactorCode, code).then(pass => {
         if (!pass) {
           return false
         }
         return this.userManager.setOneTimeCodeToUnavailable(<Onetimecode> code)
           .then(() => {
-            request.session.oneTimeCodeUsed = true
             return true
           })
       })
     })
+  }
+  
+  /**
+   * Wrapper for consume2faOneTimeCode that also sets session.oneTimeCodeUsed to true when
+   * a one time code is consumed.
+   *
+   * @param twoFactorCode  The one time code to check
+   *
+   * @param request  Used to grabe the session which is mutated if the one time code is consumed
+   *
+   * @param user  The user attempting to use the one time code
+   *
+   */
+  verify2faOneTimeCode(twoFactorCode: string, request: Request, user: BaseUser): Promise<boolean> {
+    return this.consume2faOneTimeCode(twoFactorCode, user)
+      .then(result => {
+        if (result)
+          request.session.oneTimeCodeUsed = true
+
+        return result
+      })
   }
 
   logout(request: Request) {
@@ -219,7 +247,15 @@ export class UserService {
       throw new BadRequest('Already logged out.', {key: 'already-logged-out'})
 
     request.session.user = null
-    return Promise.resolve({})
+    return new Promise((resolve, reject) => {
+      request.session.destroy((err: any) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve({})
+        }
+      })
+    })
   }
 
   private async getUser(usernameOrUser: string | BaseUser): Promise<BaseUser | undefined> {
@@ -231,13 +267,7 @@ export class UserService {
     else throw new Error("Invalid username or user.")
   }
 
-  async createTempPassword(usernameOrUser: string | BaseUser): Promise<any> {
-    const userOrUndefined = await this.getUser(usernameOrUser)
-    if (!userOrUndefined)
-      return Promise.resolve(new BadRequest("Invalid user"))
-
-    const user = userOrUndefined as BaseUser
-    
+  async createTempPassword(user: string): Promise<any> {
     return this.userManager.getTempPassword(user)
       .then(tempPassword => {
         if (!tempPassword) {
@@ -270,10 +300,10 @@ export class UserService {
       throw new lawn.Needs_Login()
   }
 
-  getSanitizedUser(id: string): Promise<BaseUser> {
+  getSanitizedUser(id: string): Promise<BaseUser | undefined> {
     return this.getModel()
       .getUser(id)
-      .then(sanitize)
+      .then(mUser => mUser && sanitize(mUser))
   }
 
   addUserToRequest(request: Request): Promise<BaseUser | undefined> {

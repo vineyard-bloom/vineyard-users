@@ -49,7 +49,7 @@ class UserService {
             store: sessionStore,
             cookie: cookie,
             resave: false,
-            saveUninitialized: true
+            saveUninitialized: false
         }));
         // Backwards compatibility
         const self = this;
@@ -59,16 +59,16 @@ class UserService {
         self.create_login_handler = () => {
             return (request) => this.loginWithUsername(request);
         };
-        self.create_login_2fa_handler = () => {
-            return (request) => this.checkUsernameOrEmailLogin(request)
-                .then(user => {
-                this.checkTwoFactor(user, request);
-                return this.finishLogin(request, user);
-            });
-        };
-        self.createLogin2faHandlerWithBackup = () => {
-            return (request) => this.login2faWithBackup(request);
-        };
+        // self.create_login_2fa_handler = () => {
+        //   return (request: Request) => this.checkUsernameOrEmailLogin(request)
+        //     .then(user => {
+        //       this.checkTwoFactor(user, request)
+        //       return this.finishLogin(request, user)
+        //     })
+        // }
+        // self.createLogin2faHandlerWithBackup = () => {
+        //   return (request: Request) => this.login2faWithBackup(request)
+        // }
         self.createLogoutHandler = () => {
             return (request) => this.logout(request);
         };
@@ -131,10 +131,11 @@ class UserService {
         return this.checkUsernameOrEmailLogin(request)
             .then(user => this.finishLogin(request, user));
     }
-    checkTwoFactor(user, request) {
-        if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
+    checkTwoFactor(user, twoFactorCode) {
+        if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), twoFactorCode))
             throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
     }
+
     checkTwoFactorAndOneTimeCode(user, request) {
         return __awaiter(this, void 0, void 0, function* () {
             const userWithPassword = yield this.checkUsernameOrEmailLogin(request);
@@ -146,12 +147,13 @@ class UserService {
                 });
         });
     }
-    login2faWithBackup(request) {
+
+    login2faWithBackup(twoFactorCode, request) {
         return this.checkUsernameOrEmailLogin(request)
             .then(user => {
             const currentUser = user;
-            if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
-                return this.verify2faOneTimeCode(request, currentUser).then(backupCodeCheck => {
+            if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), twoFactorCode))
+                return this.verify2faOneTimeCode(twoFactorCode, request, currentUser).then(backupCodeCheck => {
                     if (!backupCodeCheck)
                         throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
                     return this.finishLogin(request, currentUser);
@@ -159,28 +161,63 @@ class UserService {
             return this.finishLogin(request, currentUser);
         });
     }
-    verify2faOneTimeCode(request, user) {
+    /**
+     * Searches for a matching, available one time code and consumes it if one is found for the provided user
+     *
+     * @param twoFactorCode  The one time code to check
+     *
+     * @param user  The user attempting to use the one time code
+     *
+     */
+    consume2faOneTimeCode(twoFactorCode, user) {
         return this.userManager.getUserOneTimeCode(user).then((code) => {
             if (!code) {
                 return false;
             }
-            return this.userManager.compareOneTimeCode(request.data.twoFactor, code).then(pass => {
+            return this.userManager.compareOneTimeCode(twoFactorCode, code).then(pass => {
                 if (!pass) {
                     return false;
                 }
                 return this.userManager.setOneTimeCodeToUnavailable(code)
                     .then(() => {
-                    request.session.oneTimeCodeUsed = true;
                     return true;
                 });
             });
+        });
+    }
+    /**
+     * Wrapper for consume2faOneTimeCode that also sets session.oneTimeCodeUsed to true when
+     * a one time code is consumed.
+     *
+     * @param twoFactorCode  The one time code to check
+     *
+     * @param request  Used to grabe the session which is mutated if the one time code is consumed
+     *
+     * @param user  The user attempting to use the one time code
+     *
+     */
+    verify2faOneTimeCode(twoFactorCode, request, user) {
+        return this.consume2faOneTimeCode(twoFactorCode, user)
+            .then(result => {
+            if (result)
+                request.session.oneTimeCodeUsed = true;
+            return result;
         });
     }
     logout(request) {
         if (!request.session.user)
             throw new vineyard_lawn_1.BadRequest('Already logged out.', { key: 'already-logged-out' });
         request.session.user = null;
-        return Promise.resolve({});
+        return new Promise((resolve, reject) => {
+            request.session.destroy((err) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve({});
+                }
+            });
+        });
     }
     getUser(usernameOrUser) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -192,12 +229,8 @@ class UserService {
                 throw new Error("Invalid username or user.");
         });
     }
-    createTempPassword(usernameOrUser) {
+    createTempPassword(user) {
         return __awaiter(this, void 0, void 0, function* () {
-            const userOrUndefined = yield this.getUser(usernameOrUser);
-            if (!userOrUndefined)
-                return Promise.resolve(new vineyard_lawn_1.BadRequest("Invalid user"));
-            const user = userOrUndefined;
             return this.userManager.getTempPassword(user)
                 .then(tempPassword => {
                 if (!tempPassword) {
@@ -229,7 +262,7 @@ class UserService {
     getSanitizedUser(id) {
         return this.getModel()
             .getUser(id)
-            .then(sanitize);
+            .then(mUser => mUser && sanitize(mUser));
     }
     addUserToRequest(request) {
         if (request.user)

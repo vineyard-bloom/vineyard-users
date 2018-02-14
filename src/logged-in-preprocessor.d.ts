@@ -1,7 +1,7 @@
-import { RequestProcessor, Version, VersionPreprocessor } from 'vineyard-lawn';
+import { Request, Version, VersionPreprocessor } from 'vineyard-lawn';
 import { UserService } from "./user-service";
 export declare class LoggedInPreprocessor extends VersionPreprocessor {
     constructor(versions: Version[]);
-    createAnonymous(): RequestProcessor;
-    createAuthorized(userService: UserService): RequestProcessor;
+    createAnonymous(): (request: Request) => Promise<Request>;
+    createAuthorized(userService: UserService): (request: Request) => Promise<Request>;
 }

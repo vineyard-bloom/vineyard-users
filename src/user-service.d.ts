@@ -38,15 +38,35 @@ export declare class UserService {
     checkEmailLogin(request: Request): Promise<UserWithPassword>;
     finishLogin(request: Request, user: UserWithPassword): BaseUser;
     loginWithUsername(request: Request): Promise<BaseUser>;
-    checkTwoFactor(user: BaseUser, request: Request): void;
+    checkTwoFactor(user: BaseUser, twoFactorCode: string): void;
     checkTwoFactorAndOneTimeCode(user: BaseUser, request: Request): Promise<BaseUser | undefined>;
-    login2faWithBackup(request: Request): Promise<BaseUser>;
-    verify2faOneTimeCode(request: Request, user: BaseUser): Promise<boolean>;
+    login2faWithBackup(twoFactorCode: string, request: Request): Promise<BaseUser>;
+    /**
+     * Searches for a matching, available one time code and consumes it if one is found for the provided user
+     *
+     * @param twoFactorCode  The one time code to check
+     *
+     * @param user  The user attempting to use the one time code
+     *
+     */
+    consume2faOneTimeCode(twoFactorCode: string, user: BaseUser): Promise<boolean>;
+    /**
+     * Wrapper for consume2faOneTimeCode that also sets session.oneTimeCodeUsed to true when
+     * a one time code is consumed.
+     *
+     * @param twoFactorCode  The one time code to check
+     *
+     * @param request  Used to grabe the session which is mutated if the one time code is consumed
+     *
+     * @param user  The user attempting to use the one time code
+     *
+     */
+    verify2faOneTimeCode(twoFactorCode: string, request: Request, user: BaseUser): Promise<boolean>;
     logout(request: Request): Promise<{}>;
     private getUser(usernameOrUser);
-    createTempPassword(usernameOrUser: string | BaseUser): Promise<any>;
+    createTempPassword(user: string): Promise<any>;
     require_logged_in(request: lawn.Request): void;
-    getSanitizedUser(id: string): Promise<BaseUser>;
+    getSanitizedUser(id: string): Promise<BaseUser | undefined>;
     addUserToRequest(request: Request): Promise<BaseUser | undefined>;
     loadValidationHelpers(ajv: any): void;
     fieldExists(request: Request, fieldOptions: string[]): Promise<{

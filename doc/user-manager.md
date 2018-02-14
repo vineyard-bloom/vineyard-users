@@ -1,6 +1,6 @@
 # Vineyard Users - UserManager
 
-### Constructor
+#### Constructor
 
 Parameters
 
@@ -9,9 +9,9 @@ Parameters
 
 Returns `UserManager`
 
-### Functions
+#### Functions
 
-#### `checkUniqueness`
+##### `checkUniqueness`
 
 
 Parameters
@@ -21,7 +21,7 @@ Parameters
 
 Returns `Promise`
 
-#### `compareOneTimeCode`
+##### `compareOneTimeCode`
 
 
 Parameters
@@ -31,7 +31,7 @@ Parameters
 
 Returns `Promise`
 
-#### `createEmailCode`
+##### `createEmailCode`
 
 
 Parameters
@@ -40,16 +40,16 @@ Parameters
 
 Returns `Promise`
 
-#### `createTempPassword`
+##### `createTempPassword`
 
 
 Parameters
 
-*  username `` 
+*  user `string` 
 
 Returns `Promise`
 
-#### `createUser`
+##### `createUser`
 Saves a new user record to the database.
 Hashes the password, ensures the email is lowercase, and ensures the user.roles is at least an empty array.
 
@@ -63,7 +63,7 @@ Parameters
 
 Returns `Promise`
 
-#### `fieldExists`
+##### `fieldExists`
 
 
 Parameters
@@ -73,7 +73,7 @@ Parameters
 
 Returns `Promise`
 
-#### `getEmailCode`
+##### `getEmailCode`
 
 
 Parameters
@@ -82,31 +82,31 @@ Parameters
 
 Returns `Promise`
 
-#### `getOneTimeCodeCollection`
+##### `getOneTimeCodeCollection`
 
 
 Returns `Collection`
 
-#### `getSessionCollection`
+##### `getSessionCollection`
 
 
 Returns `any`
 
-#### `getTempPassword`
+##### `getTempPassword`
 
 
 Parameters
 
-*  user `BaseUser` 
+*  user `string` 
 
 Returns `Promise`
 
-#### `getTempPasswordCollection`
+##### `getTempPasswordCollection`
 
 
 Returns `Collection`
 
-#### `getUser`
+##### `getUser`
 Fetches a user from the database.
 This function does not sanitize its result so it can return records with login info.
 
@@ -118,12 +118,12 @@ Parameters
 
 Returns `Promise`
 
-#### `getUserCollection`
+##### `getUserCollection`
 
 
 Returns `Collection`
 
-#### `getUserFromEmail`
+##### `getUserFromEmail`
 Finds a user that has a particular email address.
 This function does not sanitize its result so it can return records with login info.
 
@@ -135,7 +135,7 @@ Parameters
 
 Returns `Promise`
 
-#### `getUserFromUsername`
+##### `getUserFromUsername`
 Finds a user that has a particular username.
 This function does not sanitize its result so it can return records with login info.
 
@@ -147,12 +147,12 @@ Parameters
 
 Returns `Promise`
 
-#### `getUserModel`
+##### `getUserModel`
 
 
 Returns `Collection`
 
-#### `getUserOneTimeCode`
+##### `getUserOneTimeCode`
 
 
 Parameters
@@ -161,7 +161,7 @@ Parameters
 
 Returns `Promise`
 
-#### `hashPassword`
+##### `hashPassword`
 Hashes a password using bcrypt.
 
 Parameters
@@ -172,7 +172,7 @@ Parameters
 
 Returns `Promise`
 
-#### `matchTempPassword`
+##### `matchTempPassword`
 
 
 Parameters
@@ -182,7 +182,7 @@ Parameters
 
 Returns `Promise`
 
-#### `prepareNewUser`
+##### `prepareNewUser`
 Prepares a new user structure before being saved to the database.
 Hashes the password, ensures the email is lowercase, and ensures the user.roles is at least an empty array.
 This function is called by UserManager.createUser and rarely needs to be called directly.
@@ -195,7 +195,7 @@ Parameters
 
 Returns `Promise`
 
-#### `setOneTimeCodeToUnavailable`
+##### `setOneTimeCodeToUnavailable`
 
 
 Parameters
@@ -204,7 +204,7 @@ Parameters
 
 Returns `Promise`
 
-#### `verifyEmailCode`
+##### `verifyEmailCode`
 
 
 Parameters

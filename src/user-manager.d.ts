@@ -89,12 +89,11 @@ export declare class UserManager {
      *
      */
     getUserFromEmail(email: string): Promise<UserWithPassword>;
-    private _createTempPassword(user);
-    createTempPassword(username: string | BaseUser): Promise<any>;
+    createTempPassword(user: string): Promise<any>;
     createEmailCode(user: BaseUser): Promise<any>;
     verifyEmailCode(userId: string, submittedCode: string): Promise<boolean>;
     getEmailCode(user: BaseUser): Promise<EmailVerification | undefined>;
-    getTempPassword(user: BaseUser): Promise<TempPassword | undefined>;
+    getTempPassword(user: string): Promise<TempPassword | undefined>;
     getUserOneTimeCode(user: BaseUser): Promise<Onetimecode | undefined>;
     fieldExists(key: string, value: any): Promise<boolean>;
     compareOneTimeCode(oneTimeCode: string, codeRecord: Onetimecode): Promise<boolean>;

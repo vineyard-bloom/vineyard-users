@@ -5,6 +5,7 @@ import {UserClient} from "../../lab/user-client";
 import {DevModeler, Schema, SequelizeClient, DatabaseClient} from "vineyard-ground"
 import {UserManager, UserService} from "../../src"
 import {TestServer} from "../src/test-server"
+import { ServerConfig } from 'vineyard-lawn';
 
 const serverUrl = 'http://localhost:3000/1.0'
 
@@ -33,8 +34,20 @@ async function assertSessionCount(userManager: UserManager, count: number) {
   assert.equal(sessionResult.length, count)
 }
 
+async function testSetup(client: SequelizeClient, url: string, api: ServerConfig): Promise<[WebClient, UserClient, UserManager, TestServer]> {
+  const generalModel = await createGeneralModel(client)
+  const sequelize = client.getLegacyDatabaseInterface()
+  const userManager = new UserManager(sequelize as any, { model: generalModel })
+  await generalModel.ground.regenerate()
+  const server = new TestServer(userManager)
+  const user = await userManager.createUser({ username: 'froggy', password: 'test', email: 'froggy@nowhere.com' })
+  await server.start(api)
+  const webClient = new WebClient(url)
+  const userClient = new UserClient(webClient, { identifier: { username: 'froggy' }, password: 'test' })
+  return [webClient, userClient, userManager, server]
+}
+
 describe('user-test', function () {
-  let server: any
   this.timeout(9000)
 
   after(function () {
@@ -43,38 +56,34 @@ describe('user-test', function () {
 
   it('login_success', async function () {
     // return local_request('get', 'ping')
-    const generalModel = await createGeneralModel(databaseClient)
-    const sequelize = databaseClient.getLegacyDatabaseInterface()
-    const userManager = new UserManager(sequelize as any, {
-      model: generalModel
-    })
+    // const generalModel = await createGeneralModel(databaseClient)
+    // const sequelize = databaseClient.getLegacyDatabaseInterface()
+    // const userManager = new UserManager(sequelize as any, {
+    //   model: generalModel
+    // })
 
-    await generalModel.ground.regenerate()
+    // await generalModel.ground.regenerate()
 
-    const server = new TestServer(userManager)
-    const user = await userManager.createUser({
-      username: 'froggy',
-      password: 'test',
-      email: 'froggy@nowhere.com'
-    })
-    await server.start(config.api)
-    const webClient = new WebClient(serverUrl)
-    const userClient = new UserClient(webClient, {
-      identifier: {username: 'froggy'},
-      password: 'test',
-    })
+    // const server = new TestServer(userManager)
+    // const user = await userManager.createUser({
+    //   username: 'froggy',
+    //   password: 'test',
+    //   email: 'froggy@nowhere.com'
+    // })
+    // await server.start(config.api)
+    // const webClient = new WebClient(serverUrl)
+    // const userClient = new UserClient(webClient, {
+    //   identifier: {username: 'froggy'},
+    //   password: 'test',
+    // })
+    const [webClient, userClient, userManager, server] = await testSetup(databaseClient, serverUrl, config.api)
 
     await assertSessionCount(userManager, 0)
-    await webClient.get('ping')
-    await assertSessionCount(userManager, 1)
 
     await userClient.login()
 
     await assertSessionCount(userManager, 1)
     await userClient.logout()
-    const result = await userManager.getSessionCollection().first().exec()
-    assert(result);
-    assert.equal(result.user, undefined)
 
     await server.stop()
   });
@@ -137,5 +146,32 @@ describe('user-test', function () {
     // }).catch(response => {
     //   assert(true)
     // })
+  })
+
+  it('anonymous sessions are not created', async function () {
+    const [webClient, userClient, userManager, server] = await testSetup(databaseClient, serverUrl, config.api)
+
+    await assertSessionCount(userManager, 0)
+    await webClient.get('ping')
+    await assertSessionCount(userManager, 0)
+
+    await server.stop()
+  })
+
+  it('sessions are different on the same web client between multiple logins', async function () {
+    const [webClient, userClient, userManager, server] = await testSetup(databaseClient, serverUrl, config.api)
+
+    await assertSessionCount(userManager, 0)
+    await userClient.login()
+    await assertSessionCount(userManager, 1)
+    const session1 = await userManager.getSessionCollection().first().exec()
+    await userClient.logout()
+    await assertSessionCount(userManager, 0)
+    await userClient.login()
+    await assertSessionCount(userManager, 1)
+    const session2 = await userManager.getSessionCollection().first().exec()
+    assert.notEqual(session1.sid, session2.sid)
+
+    await server.stop()
   })
 })

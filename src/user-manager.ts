@@ -106,7 +106,7 @@ export class UserManager {
 
       const collections = settings.model.ground.collections
       this.sessionCollection = collections.Session
-      this.tempPasswordCollection = collections.Session
+      this.tempPasswordCollection = collections.TempPassword
       this.emailVerificationCollection = collections.EmailVerification
       this.oneTimeCodeCollection = collections.Onetimecode
     }
@@ -264,7 +264,7 @@ export class UserManager {
       })
   }
 
-  private _createTempPassword(user: BaseUser): Promise<any> {
+  createTempPassword(user: string): Promise<any> {
     return this.getTempPassword(user)
       .then(tempPassword => {
         if (!tempPassword) {
@@ -277,24 +277,13 @@ export class UserManager {
             )
             .then(() => {
               return {
-                password: passwordString,
-                username: user.username
+                password: passwordString
               }
             })
         } else {
           return Promise.resolve(undefined)
         }
       })
-  }
-
-  createTempPassword(username: string | BaseUser): Promise<any> {
-    if (typeof username == 'string') {
-      return this.getUserFromUsername(username)
-        .then(user => this._createTempPassword(user))
-    }
-    else {
-      return this._createTempPassword(username)
-    }
   }
 
   createEmailCode(user: BaseUser): Promise<any> {
@@ -339,8 +328,8 @@ export class UserManager {
     return this.emailVerificationCollection.first({user: user.id}).exec()
   }
 
-  getTempPassword(user: BaseUser) {
-    return this.tempPasswordCollection.first({user: user.id}).exec()
+  getTempPassword(user: string) {
+    return this.tempPasswordCollection.first({user: user}).exec()
   }
 
   getUserOneTimeCode(user: BaseUser): Promise<Onetimecode | undefined> {
