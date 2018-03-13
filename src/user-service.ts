@@ -210,28 +210,22 @@ export class UserService {
 
         return this.userManager.getTempPassword(user)
           .then(tempPassword => {
-            if (!tempPassword) {
-              const passwordString = Math.random().toString(36).slice(2)
-              return this.userManager.hashPassword(passwordString)
-                .then(hashedPassword => this.userManager.tempPasswordCollection.create({
-                    user: user,
-                    password: hashedPassword
-                  })
-                )
-                .then(() => {
-                  return {
-                    tempPassword: passwordString,
-                    user: user
-                  }
-                })
-            } else {
-              throw new BadRequest(
-                "A temporary password has already been created. Please try again at a later time.",
-                {
-                  key: 'existing-temp-pass'
-                }
-              )
+            if (tempPassword) {
+              this.userManager.tempPasswordCollection.remove(tempPassword)
             }
+            const passwordString = Math.random().toString(36).slice(2)
+            return this.userManager.hashPassword(passwordString)
+              .then(hashedPassword => this.userManager.tempPasswordCollection.create({
+                  user: user,
+                  password: hashedPassword
+                })
+              )
+              .then(() => {
+                return {
+                  tempPassword: passwordString,
+                  user: user
+                }
+              })
           })
       })
   }

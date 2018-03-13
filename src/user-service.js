@@ -35,7 +35,7 @@ function createDefaultSessionStore(userManager) {
     });
 }
 exports.createDefaultSessionStore = createDefaultSessionStore;
-var UserService = (function () {
+var UserService = /** @class */ (function () {
     function UserService(app, userManager, settings, sessionStore) {
         if (sessionStore === void 0) { sessionStore = createDefaultSessionStore(userManager); }
         this.userManager = this.user_manager = userManager;
@@ -182,25 +182,21 @@ var UserService = (function () {
                 });
             return _this.userManager.getTempPassword(user)
                 .then(function (tempPassword) {
-                if (!tempPassword) {
-                    var passwordString_1 = Math.random().toString(36).slice(2);
-                    return _this.userManager.hashPassword(passwordString_1)
-                        .then(function (hashedPassword) { return _this.userManager.tempPasswordCollection.create({
-                        user: user,
-                        password: hashedPassword
-                    }); })
-                        .then(function () {
-                        return {
-                            tempPassword: passwordString_1,
-                            user: user
-                        };
-                    });
+                if (tempPassword) {
+                    _this.userManager.tempPasswordCollection.remove(tempPassword);
                 }
-                else {
-                    throw new vineyard_lawn_1.BadRequest("A temporary password has already been created. Please try again at a later time.", {
-                        key: 'existing-temp-pass'
-                    });
-                }
+                var passwordString = Math.random().toString(36).slice(2);
+                return _this.userManager.hashPassword(passwordString)
+                    .then(function (hashedPassword) { return _this.userManager.tempPasswordCollection.create({
+                    user: user,
+                    password: hashedPassword
+                }); })
+                    .then(function () {
+                    return {
+                        tempPassword: passwordString,
+                        user: user
+                    };
+                });
             });
         });
     };
@@ -262,7 +258,7 @@ var UserService = (function () {
     return UserService;
 }());
 exports.UserService = UserService;
-var User_Service = (function (_super) {
+var User_Service = /** @class */ (function (_super) {
     __extends(User_Service, _super);
     function User_Service(app, UserManager, settings) {
         return _super.call(this, app, UserManager, settings) || this;
