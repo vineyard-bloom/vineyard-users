@@ -5,9 +5,9 @@ import { SequelizeStore } from './session-store'
 import * as express from 'express'
 
 export type UserEndpointGenerator = {
-  loginWithUsernameOrEmail: (path: string) => EndpointInfo
-  login2faWithBackup: (path: string) => EndpointInfo
-  logout: (path: string) => EndpointInfo
+  loginWithUsernameOrEmail: (path?: string) => EndpointInfo
+  login2faWithBackup: (path?: string) => EndpointInfo
+  logout: (path?: string) => EndpointInfo
 }
 
 export function createUserEndpointGenerator(userManager: UserManager, userService: UserService, validators: any): UserEndpointGenerator {
