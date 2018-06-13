@@ -54,10 +54,10 @@ class UserService {
         // Backwards compatibility
         const self = this;
         self.login = () => {
-            return (request) => this.loginWithUsername(request);
+            return (request) => this.loginWithUsernameOrEmail(request);
         };
         self.create_login_handler = () => {
-            return (request) => this.loginWithUsername(request);
+            return (request) => this.loginWithUsernameOrEmail(request);
         };
         // self.create_login_2fa_handler = () => {
         //   return (request: Request) => this.checkUsernameOrEmailLogin(request)

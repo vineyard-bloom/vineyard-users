@@ -72,11 +72,11 @@ export class UserService {
     // Backwards compatibility
     const self: any = this
     self.login = () => {
-      return (request: Request) => this.loginWithUsername(request)
+      return (request: Request) => this.loginWithUsernameOrEmail(request)
     }
 
     self.create_login_handler = () => {
-      return (request: Request) => this.loginWithUsername(request)
+      return (request: Request) => this.loginWithUsernameOrEmail(request)
     }
 
     // self.create_login_2fa_handler = () => {

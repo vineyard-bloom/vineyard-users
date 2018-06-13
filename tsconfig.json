@@ -5,6 +5,9 @@
     "strict": true,
     "sourceMap": true,
     "declaration": true,
-    "newLine": "lf"
+    "newLine": "lf",
+    "lib": [
+      "es2016"
+    ]
   }
  }

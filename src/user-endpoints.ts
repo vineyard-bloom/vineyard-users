@@ -1,5 +1,5 @@
 import { Method, ValidationCompiler, EndpointInfo } from 'vineyard-lawn'
-import { UserService, UserManager, ManagerSettings, CookieSettings } from '.'
+import { UserService, UserManager } from '.'
 import { SequelizeStore } from './session-store'
 import * as express from 'express'
 import { ValidateFunction } from 'ajv'
