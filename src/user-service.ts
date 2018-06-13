@@ -100,19 +100,7 @@ export class UserService {
     }
   }
 
-  private _checkLogin(filter: any, password: string) {
-    return this.userManager.getUserModel().first(filter)
-      .then(user => {
-        if (!user)
-          throw new Bad_Request('Invalid credentials.', {key: 'invalid-credentials'})
-
-        return bcrypt.compare(password, user.password)
-          .then((success: boolean) => success
-            ? user
-            : this.checkTempPassword(user, password)
-          )
-      })
-  }
+  
 
   checkTempPassword(user: BaseUser, password: string) {
     return this.userManager.matchTempPassword(user, password)
@@ -248,15 +236,6 @@ export class UserService {
     })
   }
 
-  private async getUser(usernameOrUser: string | BaseUser): Promise<BaseUser | undefined> {
-    if (typeof usernameOrUser === 'string')
-      return this.userManager.getUserModel().first({username: usernameOrUser})
-    else if (typeof usernameOrUser === 'object')
-      return Promise.resolve(usernameOrUser)
-
-    else throw new Error("Invalid username or user.")
-  }
-
   async createTempPassword(user: string): Promise<any> {
     return this.userManager.getTempPassword(user)
       .then(tempPassword => {
@@ -333,6 +312,29 @@ export class UserService {
 
   getModel(): UserManager {
     return this.userManager
+  }
+
+  private _checkLogin(filter: any, password: string) {
+    return this.userManager.getUserModel().first(filter)
+      .then(user => {
+        if (!user)
+          throw new Bad_Request('Invalid credentials.', {key: 'invalid-credentials'})
+
+        return bcrypt.compare(password, user.password)
+          .then((success: boolean) => success
+            ? user
+            : this.checkTempPassword(user, password)
+          )
+      })
+  }
+
+  private async getUser(usernameOrUser: string | BaseUser): Promise<BaseUser | undefined> {
+    if (typeof usernameOrUser === 'string')
+      return this.userManager.getUserModel().first({username: usernameOrUser})
+    else if (typeof usernameOrUser === 'object')
+      return Promise.resolve(usernameOrUser)
+
+    else throw new Error("Invalid username or user.")
   }
 }
 

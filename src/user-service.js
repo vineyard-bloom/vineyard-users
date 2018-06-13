@@ -76,17 +76,6 @@ class UserService {
             return self.createLogoutHandler();
         };
     }
-    _checkLogin(filter, password) {
-        return this.userManager.getUserModel().first(filter)
-            .then(user => {
-            if (!user)
-                throw new vineyard_lawn_1.Bad_Request('Invalid credentials.', { key: 'invalid-credentials' });
-            return bcrypt.compare(password, user.password)
-                .then((success) => success
-                ? user
-                : this.checkTempPassword(user, password));
-        });
-    }
     checkTempPassword(user, password) {
         return this.userManager.matchTempPassword(user, password)
             .then(success => {
@@ -206,16 +195,6 @@ class UserService {
             });
         });
     }
-    getUser(usernameOrUser) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (typeof usernameOrUser === 'string')
-                return this.userManager.getUserModel().first({ username: usernameOrUser });
-            else if (typeof usernameOrUser === 'object')
-                return Promise.resolve(usernameOrUser);
-            else
-                throw new Error("Invalid username or user.");
-        });
-    }
     createTempPassword(user) {
         return __awaiter(this, void 0, void 0, function* () {
             return this.userManager.getTempPassword(user)
@@ -280,6 +259,27 @@ class UserService {
     }
     getModel() {
         return this.userManager;
+    }
+    _checkLogin(filter, password) {
+        return this.userManager.getUserModel().first(filter)
+            .then(user => {
+            if (!user)
+                throw new vineyard_lawn_1.Bad_Request('Invalid credentials.', { key: 'invalid-credentials' });
+            return bcrypt.compare(password, user.password)
+                .then((success) => success
+                ? user
+                : this.checkTempPassword(user, password));
+        });
+    }
+    getUser(usernameOrUser) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (typeof usernameOrUser === 'string')
+                return this.userManager.getUserModel().first({ username: usernameOrUser });
+            else if (typeof usernameOrUser === 'object')
+                return Promise.resolve(usernameOrUser);
+            else
+                throw new Error("Invalid username or user.");
+        });
     }
 }
 exports.UserService = UserService;

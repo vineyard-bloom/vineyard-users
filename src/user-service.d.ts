@@ -17,7 +17,6 @@ export declare class UserService {
     private userManager;
     private user_manager;
     constructor(app: express.Application, userManager: UserManager, cookie: CookieSettings, sessionStore?: any);
-    private _checkLogin(filter, password);
     checkTempPassword(user: BaseUser, password: string): Promise<BaseUser>;
     /**
      * Compares a plain text password with a salted password.
@@ -62,7 +61,6 @@ export declare class UserService {
      */
     verify2faOneTimeCode(twoFactorCode: string, request: Request, user: BaseUser): Promise<boolean>;
     logout(request: Request): Promise<{}>;
-    private getUser(usernameOrUser);
     createTempPassword(user: string): Promise<any>;
     require_logged_in(request: lawn.Request): void;
     getSanitizedUser(id: string): Promise<BaseUser | undefined>;
@@ -72,6 +70,8 @@ export declare class UserService {
         exists: boolean;
     }>;
     getModel(): UserManager;
+    private _checkLogin(filter, password);
+    private getUser(usernameOrUser);
 }
 export declare class User_Service extends UserService {
     constructor(app: express.Application, UserManager: UserManager, settings: CookieSettings);
