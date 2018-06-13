@@ -1,5 +1,4 @@
-import { ValidationCompiler, EndpointInfo } from 'vineyard-lawn'
-import { Method } from 'vineyard-lawn'
+import { Method, ValidationCompiler, EndpointInfo } from 'vineyard-lawn'
 import { UserService, UserManager, ManagerSettings, CookieSettings } from '.'
 import { SequelizeStore } from './session-store'
 import * as express from 'express'
@@ -11,10 +10,11 @@ export type UserEndpointGenerator = {
 }
 
 export function createUserEndpointGenerator(userManager: UserManager, userService: UserService, validators: any): UserEndpointGenerator {
+  const defaultValidators = require('./validation/user.json')
   return {
-    loginWithUsernameOrEmail: (path = 'user/login') => createLoginWithUsernameOrEmailEndpoint(userService, path, validators),
-    login2faWithBackup: (path = 'user/login') => createLoginWith2faBackupEndpoint(userService, path, validators),
-    logout: (path = 'user/logout') => createLogoutEndpoint(userService, path, validators),
+    loginWithUsernameOrEmail: (path = 'user/login', validators = defaultValidators) => createLoginWithUsernameOrEmailEndpoint(userService, path, validators),
+    login2faWithBackup: (path = 'user/login', validators = defaultValidators) => createLoginWith2faBackupEndpoint(userService, path, validators),
+    logout: (path = 'user/logout', validators = defaultValidators) => createLogoutEndpoint(userService, path, validators),
   }
 }
 
@@ -41,6 +41,6 @@ function createLogoutEndpoint(userService: UserService, path: string, validators
     method: Method.post,
     path: path,
     action: userService.logout,
-    validators: validators.logout
+    validators: validators.empty
   }
 }

@@ -7,5 +7,12 @@
       "twoFactor": {"$ref": "vineyard-users#twoFactorToken"},
       "password": {"$ref": "vineyard-users#password"}
     }
+  },
+  "login2faWithBackup": {
+    "properties": {
+      "username": {"$ref": "vineyard-users#username"},
+      "twoFactor": {"$ref": "vineyard-users#twoFactorToken"},
+      "password": {"$ref": "vineyard-users#password"}
+    }
   }
 }
