@@ -255,6 +255,7 @@ class UserManager {
                 return this.userModel.update(user, {
                     emailVerified: true
                 })
+                    // .then(() => this.emailVerificationCollection.remove(emailCode))
                     .then(() => true);
             });
         });

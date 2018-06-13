@@ -37,7 +37,7 @@ export declare class UserService {
     checkUsernameOrEmailLogin(request: Request): Promise<UserWithPassword>;
     checkEmailLogin(request: Request): Promise<UserWithPassword>;
     finishLogin(request: Request, user: UserWithPassword): BaseUser;
-    loginWithUsername(request: Request): Promise<BaseUser>;
+    loginWithUsernameOrEmail(request: Request): Promise<BaseUser>;
     checkTwoFactor(user: BaseUser, twoFactorCode: string): void;
     login2faWithBackup(twoFactorCode: string, request: Request): Promise<BaseUser>;
     /**

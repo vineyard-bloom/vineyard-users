@@ -127,7 +127,7 @@ class UserService {
         request.session.user = user.id;
         return sanitize(user);
     }
-    loginWithUsername(request) {
+    loginWithUsernameOrEmail(request) {
         return this.checkUsernameOrEmailLogin(request)
             .then(user => this.finishLogin(request, user));
     }
