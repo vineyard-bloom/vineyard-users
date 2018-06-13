@@ -6,7 +6,7 @@ import {BadRequest} from "vineyard-lawn/source/errors";
 
 const bcrypt = require('bcrypt');
 
-export interface ManagerSettings {
+export interface Settings {
   user_model?: any
   tableKeys?: any
   model: any

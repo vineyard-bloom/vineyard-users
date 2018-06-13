@@ -2,10 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const vineyard_lawn_1 = require("vineyard-lawn");
 function createUserEndpointGenerator(userManager, userService, validators) {
+    const defaultValidators = require('./validation/user.json');
     return {
-        loginWithUsernameOrEmail: (path = 'user/login') => createLoginWithUsernameOrEmailEndpoint(userService, path, validators),
-        login2faWithBackup: (path = 'user/login') => createLoginWith2faBackupEndpoint(userService, path, validators),
-        logout: (path = 'user/logout') => createLogoutEndpoint(userService, path, validators),
+        loginWithUsernameOrEmail: (path = 'user/login', validators = defaultValidators) => createLoginWithUsernameOrEmailEndpoint(userService, path, validators),
+        login2faWithBackup: (path = 'user/login', validators = defaultValidators) => createLoginWith2faBackupEndpoint(userService, path, validators),
+        logout: (path = 'user/logout', validators = defaultValidators) => createLogoutEndpoint(userService, path, validators),
     };
 }
 exports.createUserEndpointGenerator = createUserEndpointGenerator;
@@ -30,7 +31,7 @@ function createLogoutEndpoint(userService, path, validators) {
         method: vineyard_lawn_1.Method.post,
         path: path,
         action: userService.logout,
-        validators: validators.logout
+        validators: validators.empty
     };
 }
 //# sourceMappingURL=user-endpoints.js.map
