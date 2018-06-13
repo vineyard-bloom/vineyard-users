@@ -1,0 +1,11 @@
+{
+  "empty": {
+  },
+  "loginWithUsername": {
+    "properties": {
+      "username": {"$ref": "vineyard-users#username"},
+      "twoFactor": {"$ref": "vineyard-users#twoFactorToken"},
+      "password": {"$ref": "vineyard-users#password"}
+    }
+  }
+}

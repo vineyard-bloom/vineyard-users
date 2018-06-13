@@ -162,7 +162,7 @@ export class UserService {
     return sanitize(user)
   }
 
-  loginWithUsername(request: Request) {
+  loginWithUsernameOrEmail(request: Request) {
     return this.checkUsernameOrEmailLogin(request)
       .then(user => this.finishLogin(request, user))
   }
