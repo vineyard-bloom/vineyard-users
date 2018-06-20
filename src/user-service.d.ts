@@ -39,6 +39,7 @@ export declare class UserService {
     finishLogin(request: Request, user: UserWithPassword): BaseUser;
     loginWithUsername(request: Request): Promise<BaseUser>;
     checkTwoFactor(user: BaseUser, twoFactorCode: string): void;
+    checkTwoFactorAndOneTimeCode(user: BaseUser, request: Request): Promise<BaseUser | undefined>;
     login2faWithBackup(twoFactorCode: string, request: Request): Promise<BaseUser>;
     /**
      * Searches for a matching, available one time code and consumes it if one is found for the provided user

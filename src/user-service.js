@@ -135,6 +135,19 @@ class UserService {
         if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), twoFactorCode))
             throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
     }
+
+    checkTwoFactorAndOneTimeCode(user, request) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const userWithPassword = yield this.checkUsernameOrEmailLogin(request);
+            if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
+                return this.verify2faOneTimeCode(request, user).then(backupCodeCheck => {
+                    if (!backupCodeCheck)
+                        throw new vineyard_lawn_1.Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" });
+                    return this.finishLogin(request, userWithPassword);
+                });
+        });
+    }
+
     login2faWithBackup(twoFactorCode, request) {
         return this.checkUsernameOrEmailLogin(request)
             .then(user => {

@@ -172,6 +172,16 @@ export class UserService {
       throw new Bad_Request('Invalid Two Factor Authentication code.', {key: "invalid-2fa"})
   }
 
+  async checkTwoFactorAndOneTimeCode(user: BaseUser, request: Request) {
+    const userWithPassword = await this.checkUsernameOrEmailLogin(request)
+    if (getTwoFactorEnabled(user) && !two_factor.verifyTwoFactorToken(getTwoFactorSecret(user), request.data.twoFactor))
+      return this.verify2faOneTimeCode(request, user).then(backupCodeCheck => {
+        if (!backupCodeCheck)
+          throw new Bad_Request('Invalid Two Factor Authentication code.', { key: "invalid-2fa" })
+        return this.finishLogin(request, userWithPassword)
+      })
+  }
+
   login2faWithBackup(twoFactorCode: string, request: Request) {
     return this.checkUsernameOrEmailLogin(request)
       .then(user => {
